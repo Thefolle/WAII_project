@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>MODULES</ID>
+  <OriginalElement />
+  <nodes>
+    <node x="0.0" y="0.0">mdl-kafka_configurer</node>
+    <node x="0.0" y="65.0">mdl-order_service</node>
+  </nodes>
+  <notes />
+  <edges />
+  <settings layout="Hierarchic Group" zoom="1.0" x="128.0" y="10.0" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Show Paths: Root -&gt; Selection</Category>
+    <Category>Libraries</Category>
+  </Categories>
+</Diagram>
+

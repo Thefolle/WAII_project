@@ -14,5 +14,5 @@ data class Order(
     val buyerId: Customer,
     @Relationship(value = "CONTAINS_PRODUCT", direction = Relationship.Direction.OUTGOING)
     val productIds: Set<Product>,
-    val status: Boolean
+    val status: OrderStatus
 )

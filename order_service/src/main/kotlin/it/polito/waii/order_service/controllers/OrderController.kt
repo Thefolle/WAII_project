@@ -11,8 +11,8 @@ class OrderController {
 
     }
 
-    @GetMapping
-    fun getOrderById(id: Long) {
+    @GetMapping("/{id}")
+    fun getOrderById(@PathVariable("id") id: Long) {
 
     }
 
@@ -21,13 +21,13 @@ class OrderController {
 
     }
 
-    @PatchMapping
-    fun updateOrderById(id: Long) {
+    @PatchMapping("/{id}")
+    fun updateOrderById(@PathVariable("id") id: Long) {
 
     }
 
-    @DeleteMapping
-    fun deleteOrder(id: Long) {
+    @DeleteMapping("/{id}")
+    fun deleteOrder(@PathVariable("id") id: Long) {
 
     }
 
