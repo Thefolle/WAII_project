@@ -23,7 +23,10 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("org.springframework.kafka:spring-kafka")
-    implementation("org.neo4j.springframework.data:spring-data-neo4j-rx-spring-boot-starter:1.1.1")
+
+//    implementation("org.neo4j.springframework.data:spring-data-neo4j-rx-spring-boot-starter:1.1.1")
+    implementation("org.springframework.data:spring-data-neo4j:6.1.2")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
     testImplementation("org.springframework.kafka:spring-kafka-test")
@@ -32,6 +35,7 @@ dependencies {
 tasks.withType<KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
+
         jvmTarget = "11"
     }
 }
