@@ -3,16 +3,18 @@
   <ID>MODULES</ID>
   <OriginalElement />
   <nodes>
-    <node x="0.0" y="0.0">mdl-kafka_configurer</node>
-    <node x="0.0" y="65.0">mdl-order_service</node>
+    <node x="0.0" y="0.0">mdl-order_service</node>
   </nodes>
   <notes />
   <edges />
-  <settings layout="Hierarchic Group" zoom="1.0" x="128.0" y="10.0" />
-  <SelectedNodes />
+  <settings layout="Hierarchic Group" zoom="1.0" x="47.0" y="10.0" />
+  <SelectedNodes>
+    <node>mdl-order_service</node>
+  </SelectedNodes>
   <Categories>
-    <Category>Show Paths: Root -&gt; Selection</Category>
     <Category>Libraries</Category>
+    <Category>Show Paths: Root -&gt; Selection</Category>
+    <Category>Test dependencies</Category>
   </Categories>
 </Diagram>
 

@@ -1,5 +1,9 @@
 # WAII project
 
+## Saga
+
+Explanation: https://developers.redhat.com/blog/2018/10/01/patterns-for-distributed-transactions-within-a-microservices-architecture#conclusion
+
 ## Kafka general configuration
 
 The four microservices communicate through a Kafka server, where they send and receive messages.
