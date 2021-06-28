@@ -51,25 +51,27 @@ The first two beans configure a producer, whereas KafkaTemplate is used to send 
 Here is the initial configuration
 
 ```kotlin
-@EnableKafka
 @Configuration
+@EnableKafka
 class KafkaConfiguration {
 
     @Bean
-    fun consumerFactory(): ConsumerFactory<String, String> {
+    fun consumerFactory(): ConsumerFactory<String, OrderDto> {
         var config = mapOf(
             Pair(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"),
+            Pair(ConsumerConfig.GROUP_ID_CONFIG, "OrderGroupId"),
             Pair(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer::class.java),
-            Pair(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer::class.java)
+            Pair(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer::class.java),
+            JsonDeserializer.TRUSTED_PACKAGES to "*"
         )
 
         return DefaultKafkaConsumerFactory(config)
     }
 
     @Bean
-    fun concurrentKafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, String> {
-        var container = ConcurrentKafkaListenerContainerFactory<String, String>()
-        container.consumerFactory = consumerFactory()
+    fun concurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, OrderDto>): ConcurrentKafkaListenerContainerFactory<String, OrderDto> {
+        var container = ConcurrentKafkaListenerContainerFactory<String, OrderDto>()
+        container.consumerFactory = consumerFactory
 
         return container
     }
@@ -80,10 +82,15 @@ class KafkaConfiguration {
 And this is the callback called when the topic _topic1_ receives a message.
 
 ```kotlin
-    @KafkaListener(id = "consumer", topics = ["topic1"])
-        fun listen(value: String?) {
-            println(value);
+@Component
+class OrderController {
+
+    @KafkaListener(topics = ["topic1"], containerFactory = "concurrentKafkaListenerContainerFactory")
+    fun listen(orderDto: OrderDto) {
+        println(orderDto)
     }
+
+}
 ```
 
 #### Configurer
