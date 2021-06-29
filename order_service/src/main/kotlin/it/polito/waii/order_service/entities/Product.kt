@@ -7,7 +7,6 @@ import org.springframework.data.neo4j.core.schema.Node
 @Node
 data class Product(
     @Id
-    @GeneratedValue
     val id: Long?,
 //    Should retrieve this additional information from the product service
 //    val name: String,

@@ -11,8 +11,8 @@ data class Order(
     @GeneratedValue
     val id: Long?,
     @Relationship(type = "PLACED_BY", direction = Relationship.Direction.OUTGOING)
-    val buyerId: Customer,
+    val buyer: Customer,
     @Relationship(value = "CONTAINS_PRODUCT", direction = Relationship.Direction.OUTGOING)
-    val productIds: Set<Product>,
+    val products: Set<Product>,
     val status: OrderStatus
 )

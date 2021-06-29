@@ -5,6 +5,6 @@ import reactor.core.publisher.Mono
 
 interface OrderService {
 
-    fun createOrder(orderDto: OrderDto): Mono<Long>
+    suspend fun createOrder(orderDto: OrderDto): Mono<Long>
 
 }
