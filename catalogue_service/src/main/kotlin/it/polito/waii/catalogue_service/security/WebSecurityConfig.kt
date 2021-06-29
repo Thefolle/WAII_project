@@ -36,7 +36,7 @@ class WebSecurityConfig (val passwordEncoder: PasswordEncoder, val userService: 
 
         http.authorizeRequests().antMatchers("/auth/**").permitAll()
 
-        http.authorizeRequests().antMatchers("/wallets/**").authenticated()
+        //http.authorizeRequests().antMatchers("/wallets/**").authenticated()
 
         //http.formLogin().permitAll().and().logout().permitAll()
 

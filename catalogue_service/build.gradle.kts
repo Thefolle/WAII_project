@@ -23,27 +23,40 @@ repositories {
     mavenCentral()
 }
 
+extra["springCloudVersion"] = "2020.0.3"
+
 dependencies {
-    implementation("org.hibernate.validator:hibernate-validator")
-    implementation("javax.validation:validation-api")
-    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
+    //implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-mail")
+    //implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+    implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("io.jsonwebtoken:jjwt-api:0.11.2")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.2")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.2")
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("io.projectreactor:reactor-test")
-    testImplementation("org.springframework.security:spring-security-test")
+    implementation("org.hibernate.validator:hibernate-validator")
+    implementation("javax.validation:validation-api")
     runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
+    implementation("com.google.code.gson:gson:2.8.5")
+
+    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+    //implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
+    //implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    //testImplementation("io.projectreactor:reactor-test")
+    //testImplementation("org.springframework.security:spring-security-test")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+    }
 }
 
 tasks.withType<KotlinCompile> {
