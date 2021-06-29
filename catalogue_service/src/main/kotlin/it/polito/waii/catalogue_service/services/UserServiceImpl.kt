@@ -46,6 +46,7 @@ class UserServiceImpl(val userRepository: UserRepository,
 
     override fun authenticateUser(loginDTO: LoginDTO, response: HttpServletResponse) {
         val user = loadUserByUsername(loginDTO.username)
+        if (!user.isEn) throw ResponseStatusException(HttpStatus.FORBIDDEN, "This user is not enabled yet.")
         val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(user, null, user.authorities)
         val authentication : Authentication = usernamePasswordAuthenticationToken
         val token = jwtUtils.generateJwtToken(authentication)
@@ -77,7 +78,7 @@ class UserServiceImpl(val userRepository: UserRepository,
 
         val tokenDTO = notificationService.createToken(user.username)
         mailService.sendMessage(toMail = user.email, subject = "Group19 Final Project - Registration Confirmation",
-            mailBody = "Confirm your registration by clicking on the following link: localhost:8080/auth/registrationConfirm?token=" + tokenDTO.token)
+            mailBody = "Confirm your registration by clicking on the following link: localhost:8080/catalogue/auth/registrationConfirm?token=" + tokenDTO.token)
     }
 
     override fun addRole(role: Rolename, username: String) {

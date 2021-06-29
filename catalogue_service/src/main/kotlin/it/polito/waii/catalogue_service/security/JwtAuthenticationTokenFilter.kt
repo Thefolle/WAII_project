@@ -19,7 +19,7 @@ class JwtAuthenticationTokenFilter(val jwtUtils: JwtUtils): OncePerRequestFilter
     ) {
         val token: String
         val header = request.getHeader("Authorization")
-        //println("Sono nel filter")
+        println("Sono nel filter JWT")
         if ( header != null && header.startsWith("Bearer ")) {
             token = header.substring(7)
             if (jwtUtils.validateJwtToken(token)) {

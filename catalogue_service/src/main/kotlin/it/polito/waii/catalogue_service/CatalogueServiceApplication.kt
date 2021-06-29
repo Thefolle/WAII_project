@@ -3,9 +3,8 @@ package it.polito.waii.catalogue_service
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.ComponentScan
-import org.springframework.context.annotation.PropertySource
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.JavaMailSenderImpl
 import org.springframework.security.core.AuthenticationException
@@ -17,6 +16,7 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 @SpringBootApplication
+@EnableEurekaClient
 //@PropertySource(value = ["classpath:application.properties"], ignoreResourceNotFound = false)
 class CatalogueServiceApplication{
     @Bean

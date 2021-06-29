@@ -26,18 +26,18 @@ class AuthenticationController(private val userServiceImpl: UserServiceImpl){
     }
 
     @GetMapping("/registrationConfirm")
-    fun registrationConfirm(@RequestParam("token") token: String): ResponseEntity<UserDTO>{
+    fun registrationConfirm(@RequestParam("token") token: String): ResponseEntity<String>{
 
         val user = userServiceImpl.registrationConfirm(token)
 
-        return ResponseEntity.status(HttpStatus.OK).body(user)
+        return ResponseEntity.status(HttpStatus.OK).body(user.toJson())
     }
 
     @PostMapping("/login")
-    fun login(@RequestBody loginDTO: LoginDTO, response: HttpServletResponse): ResponseEntity<Nothing> {
+    fun login(@RequestBody loginDTO: LoginDTO, response: HttpServletResponse): ResponseEntity<String> {
         userServiceImpl.authenticateUser(loginDTO, response)
 
-        return ResponseEntity.status(HttpStatus.CREATED).build()
+        return ResponseEntity.status(HttpStatus.CREATED).body("Login succesful!")
     }
 
 

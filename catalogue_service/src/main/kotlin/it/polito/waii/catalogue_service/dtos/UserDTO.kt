@@ -1,5 +1,7 @@
 package it.polito.waii.catalogue_service.dtos
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import javax.validation.constraints.Pattern
@@ -62,5 +64,12 @@ class UserDTO(
 
     override fun isCredentialsNonExpired(): Boolean {
         return true
+    }
+
+    fun toJson(): String {
+        val gson = GsonBuilder().setPrettyPrinting().create()
+        val json = gson.toJson(this)
+        println(json)
+        return json
     }
 }

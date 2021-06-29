@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 class MailServiceImpl(val mailSender: JavaMailSender): MailService {
 
     override fun sendMessage(toMail: String, subject: String, mailBody: String) {
-        var message = SimpleMailMessage()
+        val message = SimpleMailMessage()
         message.setTo(toMail)
         message.setSubject(subject)
         message.setText(mailBody)
