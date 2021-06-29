@@ -9,6 +9,7 @@ data class Product(
     @Id
     @GeneratedValue
     val id: Long?,
-    val name: String,
-    val price: Float
+//    Should retrieve this additional information from the product service
+//    val name: String,
+//    val price: Float
 )

@@ -1,10 +1,10 @@
 package it.polito.waii.order_service.services
 
-import org.springframework.stereotype.Service
+import it.polito.waii.order_service.dtos.OrderDto
+import reactor.core.publisher.Mono
 
-@Service
 interface OrderService {
 
-
+    fun createOrder(orderDto: OrderDto): Mono<Long>
 
 }

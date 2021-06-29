@@ -8,5 +8,5 @@ import org.springframework.data.neo4j.core.schema.Node
 data class Customer(
     @Id
     @GeneratedValue
-    val id: Long?
+    val id: Long? = null
 )
