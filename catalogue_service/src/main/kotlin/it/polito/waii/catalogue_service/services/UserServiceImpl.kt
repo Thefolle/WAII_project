@@ -12,6 +12,7 @@ import it.polito.waii.catalogue_service.security.JwtUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.annotation.Secured
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
@@ -84,11 +85,14 @@ class UserServiceImpl(val userRepository: UserRepository,
             mailBody = "Confirm your registration by clicking on the following link: localhost:8080/catalogue/auth/registrationConfirm?token=" + tokenDTO.token)
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun addRole(role: Rolename, username: String) {
+        println(username)
         val user = getUserByUsername(username)
         user.addRole(role)
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun removeRole(role: Rolename, username: String) {
         val user = getUserByUsername(username)
         user.removeRole(role)

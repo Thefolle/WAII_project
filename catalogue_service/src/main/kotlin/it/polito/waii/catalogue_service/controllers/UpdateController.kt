@@ -27,13 +27,12 @@ class UpdateController(private val userServiceImpl: UserServiceImpl) {
 
     @PostMapping("/role")
     fun updateRole(@Valid @RequestBody updateRoleDTO: UpdateRoleDTO): ResponseEntity<String> {
-        //TODO : fix problem with roles check for this end point
         if (updateRoleDTO.action == Action.ADD)
             userServiceImpl.addRole(updateRoleDTO.role, updateRoleDTO.username)
         else if (updateRoleDTO.action == Action.REMOVE)
             userServiceImpl.removeRole(updateRoleDTO.role, updateRoleDTO.username)
         else
-            throw throw ResponseStatusException(HttpStatus.BAD_REQUEST, "UNKNOWN ROLE SPECIFIED")
+            throw  ResponseStatusException(HttpStatus.BAD_REQUEST, "UNKNOWN ROLE SPECIFIED")
 
         return ResponseEntity.status(HttpStatus.OK)
             .body("User role updated successfully!")
