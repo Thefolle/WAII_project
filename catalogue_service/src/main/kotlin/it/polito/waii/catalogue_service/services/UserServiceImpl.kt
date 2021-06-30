@@ -3,6 +3,7 @@ package it.polito.waii.catalogue_service.services
 
 import it.polito.waii.catalogue_service.dtos.LoginDTO
 import it.polito.waii.catalogue_service.dtos.RegisterDTO
+import it.polito.waii.catalogue_service.dtos.UpdatePasswordDTO
 import it.polito.waii.catalogue_service.dtos.UserDTO
 import it.polito.waii.catalogue_service.entities.Rolename
 import it.polito.waii.catalogue_service.entities.User
@@ -13,6 +14,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.security.access.annotation.Secured
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -71,7 +73,8 @@ class UserServiceImpl(val userRepository: UserRepository,
             email = registerDTO.email,
             deliveryAddress = registerDTO.deliveryAddress,
             isEnabled = false,
-            roles = Rolename.CUSTOMER.toString()
+            isAdmin = false,
+            isCustomer = true
         )
 
         userRepository.save(user)
@@ -91,13 +94,13 @@ class UserServiceImpl(val userRepository: UserRepository,
         user.removeRole(role)
     }
 
-    @Secured("ADMIN")
+    //@Secured("ADMIN")
     override fun enable(username: String) {
         val user = getUserByUsername(username)
         user.isEnabled = true
     }
 
-    @Secured("ADMIN")
+    //@Secured("ADMIN")
     override fun disable(username: String) {
         val user = getUserByUsername(username)
         user.isEnabled = false
@@ -109,6 +112,19 @@ class UserServiceImpl(val userRepository: UserRepository,
         enable(verifyToken.username)
 
         return loadUserByUsername(verifyToken.username)
+    }
+
+    override fun updatePassword(update: UpdatePasswordDTO) {
+        if (update.new_password != update.new_password_confirm) throw ResponseStatusException(HttpStatus.CONFLICT, "Password and confirmPassword don't match!")
+        val principal = SecurityContextHolder.getContext().authentication.principal
+        val username = if (principal is UserDTO){
+            principal.username
+        } else{
+            principal.toString()
+        }
+
+        val user = getUserByUsername(username)
+        user.password = passwordEncoder.encode(update.new_password)
     }
 
 }

@@ -3,6 +3,7 @@ package it.polito.waii.catalogue_service.services
 
 import it.polito.waii.catalogue_service.dtos.LoginDTO
 import it.polito.waii.catalogue_service.dtos.RegisterDTO
+import it.polito.waii.catalogue_service.dtos.UpdatePasswordDTO
 import it.polito.waii.catalogue_service.dtos.UserDTO
 import it.polito.waii.catalogue_service.entities.Rolename
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -27,4 +28,6 @@ interface UserService: UserDetailsService {
     override fun loadUserByUsername(username: String) : UserDTO
 
     fun registrationConfirm(token: String): UserDTO
+
+    fun updatePassword(update: UpdatePasswordDTO)
 }

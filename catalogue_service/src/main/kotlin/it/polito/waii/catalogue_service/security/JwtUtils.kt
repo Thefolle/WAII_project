@@ -36,7 +36,8 @@ class JwtUtils {
             .setExpiration(Date(System.currentTimeMillis() + jwtExpirationMs))
             .signWith(key)
             .claim("username", userPrincipal.uname)
-            .claim("roles", userPrincipal.roles)
+            .claim("isAdmin", userPrincipal.isAdmin)
+            .claim("isCustomer", userPrincipal.isCustomer)
             .compact()
     }
 
@@ -70,8 +71,18 @@ class JwtUtils {
         val deliveryAddress = body["deliveryAddress"].toString()
         val password = body["pass"].toString()
         val mail = body["mail"].toString()
-        val roles = body["roles"].toString()
+        val isAdmin = body["isAdmin"]
+        val isCustomer = body["isCustomer"]
 
-        return  UserDTO(null, uname = username, pass = password, name = name, surname = surname, mail = mail, deliveryAddress = deliveryAddress, roles = roles, isEn = true)
+        return  UserDTO(null,
+                            uname = username,
+                            pass = password,
+                            name = name,
+                            surname = surname,
+                            mail = mail,
+                            deliveryAddress = deliveryAddress,
+                            isAdmin = isAdmin as Boolean,
+                            isCustomer = isCustomer as Boolean,
+                            isEn = true)
     }
 }

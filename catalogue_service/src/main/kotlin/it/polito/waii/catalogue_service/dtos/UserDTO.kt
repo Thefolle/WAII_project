@@ -2,6 +2,7 @@ package it.polito.waii.catalogue_service.dtos
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import it.polito.waii.catalogue_service.entities.Rolename
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import javax.validation.constraints.Pattern
@@ -17,7 +18,8 @@ class UserDTO(
     var surname: String,
     var deliveryAddress: String,
     var isEn:Boolean,
-    var roles:String
+    var isAdmin:Boolean,
+    var isCustomer: Boolean
 ): UserDetails {
 
 
@@ -39,8 +41,10 @@ class UserDTO(
     }
 
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
+        val roles = mutableListOf<String>()
+        if (isAdmin) roles.add(Rolename.ADMIN.toString())
+        if (isCustomer) roles.add(Rolename.CUSTOMER.toString())
         return roles
-            .split("_")
             .map { GrantedAuthority { it } }
             .toMutableList()
     }
