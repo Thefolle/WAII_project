@@ -6,10 +6,7 @@ import it.polito.waii.catalogue_service.entities.Action
 import it.polito.waii.catalogue_service.services.UserServiceImpl
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import javax.validation.Valid
 
@@ -17,7 +14,7 @@ import javax.validation.Valid
 @RequestMapping("/update")
 class UpdateController(private val userServiceImpl: UserServiceImpl) {
 
-    @PostMapping("/password")
+    @PatchMapping("/password")
     fun updatePassword(@Valid @RequestBody updatePasswordDTO: UpdatePasswordDTO): ResponseEntity<String> {
         userServiceImpl.updatePassword(updatePasswordDTO)
 
@@ -25,7 +22,7 @@ class UpdateController(private val userServiceImpl: UserServiceImpl) {
             .body("User password updated successfully!")
     }
 
-    @PostMapping("/role")
+    @PatchMapping("/role")
     fun updateRole(@Valid @RequestBody updateRoleDTO: UpdateRoleDTO): ResponseEntity<String> {
         if (updateRoleDTO.action == Action.ADD)
             userServiceImpl.addRole(updateRoleDTO.role, updateRoleDTO.username)

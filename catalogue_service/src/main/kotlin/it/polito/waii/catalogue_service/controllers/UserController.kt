@@ -24,7 +24,7 @@ class UserController(private val userServiceImpl: UserServiceImpl) {
             .body(user.toJson())
     }
 
-    @PostMapping("/updateInfo")
+    @PatchMapping("/updateInfo")
     fun updateRole(@Valid @RequestBody updateUserDTO: UpdateUserDTO): ResponseEntity<String> {
         val user = userServiceImpl.updateUserInfo(updateUserDTO)
 
