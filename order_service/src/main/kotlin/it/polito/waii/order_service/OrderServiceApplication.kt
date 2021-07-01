@@ -3,6 +3,7 @@ package it.polito.waii.order_service
 import it.polito.waii.order_service.dtos.OrderDto
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.kafka.common.serialization.VoidSerializer
 import org.neo4j.cypherdsl.core.renderer.Configuration
 import org.neo4j.driver.Driver
 import org.springframework.boot.ApplicationRunner
@@ -15,13 +16,14 @@ import org.springframework.data.neo4j.repository.config.ReactiveNeo4jRepositoryC
 import org.springframework.kafka.core.DefaultKafkaProducerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.core.ProducerFactory
+import org.springframework.kafka.support.KafkaNull
 import org.springframework.kafka.support.serializer.JsonSerializer
 
 @SpringBootApplication
 class OrderServiceApplication {
 
     @Bean
-    fun producerFactory(): ProducerFactory<String, OrderDto> {
+    fun orderDtoProducerFactory(): ProducerFactory<String, OrderDto> {
         var config = mapOf(
             Pair(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"),
             Pair(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java),
@@ -32,7 +34,23 @@ class OrderServiceApplication {
     }
 
     @Bean
-    fun kafkaTemplate(producerFactory: ProducerFactory<String, OrderDto>): KafkaTemplate<String, OrderDto> {
+    fun orderDtoKafkaTemplate(producerFactory: ProducerFactory<String, OrderDto>): KafkaTemplate<String, OrderDto> {
+        return KafkaTemplate(producerFactory)
+    }
+
+    @Bean
+    fun voidProducerFactory(): ProducerFactory<String, Void> {
+        var config = mapOf(
+            Pair(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"),
+            Pair(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java),
+            Pair(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, VoidSerializer::class.java)
+        )
+
+        return DefaultKafkaProducerFactory(config)
+    }
+
+    @Bean
+    fun voidKafkaTemplate(producerFactory: ProducerFactory<String, Void>): KafkaTemplate<String, Void> {
         return KafkaTemplate(producerFactory)
     }
 

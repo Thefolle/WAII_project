@@ -10,7 +10,7 @@ class KafkaConfigurerApplication {
 
     @Bean
     fun fakeTopic(): NewTopic {
-        return NewTopic("fakeTopic", 1, 1)
+        return NewTopic("topic1", 2, 1)
     }
 
 }
