@@ -19,11 +19,13 @@ class JwtAuthenticationTokenFilter(val jwtUtils: JwtUtils): OncePerRequestFilter
     ) {
         val token: String
         val header = request.getHeader("Authorization")
-        println("Sono nel filter JWT")
         if ( header != null && header.startsWith("Bearer ")) {
+            println("Sono nel filter JWT")
             token = header.substring(7)
             if (jwtUtils.validateJwtToken(token)) {
                 val userDetailsDTO = jwtUtils.getDetailsFromJwtToken(token)
+                println(userDetailsDTO.toJson())
+                println(userDetailsDTO.authorities)
                 val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(userDetailsDTO, null, userDetailsDTO.authorities)
                 usernamePasswordAuthenticationToken.details = WebAuthenticationDetailsSource().buildDetails(request)
                 val authentication : Authentication = usernamePasswordAuthenticationToken

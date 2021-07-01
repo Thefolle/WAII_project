@@ -21,27 +21,28 @@ class User(
     var deliveryAddress: String,
     @ColumnDefault("false")
     var isEnabled: Boolean = false,
-    var roles: String = "",
+    @ColumnDefault("false")
+    var isAdmin: Boolean = false,
+    @ColumnDefault("true")
+    var isCustomer: Boolean = true
 //    @OneToOne var customer: Customer? = null
 ) {
 
     fun getRoles(): List<Rolename> {
-        return if (roles.isEmpty()) mutableListOf<Rolename>()
-        else roles.split("_").map { Rolename.valueOf(it) }.toMutableList()
+        val roles = mutableListOf<Rolename>()
+        if (isAdmin) roles.add(Rolename.ADMIN)
+        if (isCustomer) roles.add(Rolename.CUSTOMER)
+        return roles
     }
 
     fun addRole(role: Rolename) {
-        if (!roles.contains(role.name)) {
-            var newRoles = getRoles().toMutableList()
-            newRoles.add(role)
-            roles = newRoles.joinToString("_")
-        }
+        if (role == Rolename.ADMIN) isAdmin = true
+        if (role == Rolename.CUSTOMER) isCustomer = true
     }
 
     fun removeRole(role: Rolename) {
-        if (roles.contains(role.name)) {
-            roles = roles.split("_").filter { it != role.name }.joinToString("_")
-        }
+        if (role == Rolename.ADMIN) isAdmin = false
+        if (role == Rolename.CUSTOMER) isCustomer = false
     }
 
     fun toDTO() = UserDTO(
@@ -53,7 +54,8 @@ class User(
         mail = email,
         deliveryAddress = deliveryAddress,
         isEn = isEnabled,
-        roles = roles
+        isAdmin = isAdmin,
+        isCustomer = isCustomer
     )
 
 }

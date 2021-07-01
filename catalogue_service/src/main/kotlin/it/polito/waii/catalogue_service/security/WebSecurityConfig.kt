@@ -36,7 +36,11 @@ class WebSecurityConfig (val passwordEncoder: PasswordEncoder, val userService: 
 
         http.authorizeRequests().antMatchers("/auth/**").permitAll()
 
-        //http.authorizeRequests().antMatchers("/wallets/**").authenticated()
+        http.authorizeRequests().antMatchers("/update/)**").authenticated()
+
+        http.authorizeRequests().antMatchers("/user/**").authenticated()
+
+        //http.authorizeRequests().antMatchers("/update/role").hasRole("ADMIN") //not tested yet (currently using method authorization instead)
 
         //http.formLogin().permitAll().and().logout().permitAll()
 
