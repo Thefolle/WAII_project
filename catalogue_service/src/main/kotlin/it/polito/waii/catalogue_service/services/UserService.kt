@@ -1,10 +1,7 @@
 package it.polito.waii.catalogue_service.services
 
 
-import it.polito.waii.catalogue_service.dtos.LoginDTO
-import it.polito.waii.catalogue_service.dtos.RegisterDTO
-import it.polito.waii.catalogue_service.dtos.UpdatePasswordDTO
-import it.polito.waii.catalogue_service.dtos.UserDTO
+import it.polito.waii.catalogue_service.dtos.*
 import it.polito.waii.catalogue_service.entities.Rolename
 import org.springframework.security.core.userdetails.UserDetailsService
 import javax.servlet.http.HttpServletResponse
@@ -30,4 +27,8 @@ interface UserService: UserDetailsService {
     fun registrationConfirm(token: String): UserDTO
 
     fun updatePassword(update: UpdatePasswordDTO)
+
+    fun retrieveInformation(): UserDTO
+
+    fun updateUserInfo(update: UpdateUserDTO): UserDTO
 }
