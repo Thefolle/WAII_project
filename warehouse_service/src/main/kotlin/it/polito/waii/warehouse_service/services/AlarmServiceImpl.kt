@@ -19,5 +19,8 @@ fun getAlarmLevel(warehouseName: String, product:String): Int{
         warehouse.updateAlarm(product,newAlarm)
 
     }
+    fun soundAlarm(warehouse:String,product:String){
+        mailService.sendMessage("admin@admin","low level", warehouse+product)
+    }
 
 }

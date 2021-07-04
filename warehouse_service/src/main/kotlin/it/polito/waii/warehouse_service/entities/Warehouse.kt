@@ -24,6 +24,15 @@ data class Warehouse(
         alarmLevel.plus(Pair(pname,nLevel))
     }
 
+    fun unloadProduct(productName: String) {
+        var quantity=productQuantity.get(productName)
+        if(quantity==null)
+            quantity=-404
+        else
+        quantity=quantity-1
+
+    productQuantity.plus(Pair(productName,quantity))
+    }
 
 
 }
