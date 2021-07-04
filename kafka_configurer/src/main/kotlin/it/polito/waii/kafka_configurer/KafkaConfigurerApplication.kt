@@ -9,8 +9,13 @@ import org.springframework.context.annotation.Bean
 class KafkaConfigurerApplication {
 
     @Bean
-    fun fakeTopic(): NewTopic {
-        return NewTopic("topic1", 2, 1)
+    fun orderServiceRequestsTopic(): NewTopic {
+        return NewTopic("order_service_requests", 5, 1)
+    }
+
+    @Bean
+    fun orderServiceResponsesTopic(): NewTopic {
+        return NewTopic("order_service_responses", 1, 1)
     }
 
 }

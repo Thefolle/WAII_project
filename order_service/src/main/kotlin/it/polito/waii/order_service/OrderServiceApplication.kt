@@ -2,64 +2,31 @@ package it.polito.waii.order_service
 
 import it.polito.waii.order_service.dtos.OrderDto
 import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.common.serialization.LongSerializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.kafka.common.serialization.VoidSerializer
-import org.neo4j.cypherdsl.core.renderer.Configuration
 import org.neo4j.driver.Driver
-import org.springframework.boot.ApplicationRunner
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.data.neo4j.core.ReactiveDatabaseSelectionProvider
 import org.springframework.data.neo4j.core.transaction.ReactiveNeo4jTransactionManager
 import org.springframework.data.neo4j.repository.config.ReactiveNeo4jRepositoryConfigurationExtension
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
+import org.springframework.kafka.core.ConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaProducerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.core.ProducerFactory
-import org.springframework.kafka.support.KafkaNull
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
+import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
+import org.springframework.kafka.support.SimpleKafkaHeaderMapper
+import org.springframework.kafka.support.converter.MessagingMessageConverter
 import org.springframework.kafka.support.serializer.JsonSerializer
+
 
 @SpringBootApplication
 class OrderServiceApplication {
-
-    @Bean
-    fun orderDtoProducerFactory(): ProducerFactory<String, OrderDto> {
-        var config = mapOf(
-            Pair(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"),
-            Pair(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java),
-            Pair(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer::class.java)
-        )
-
-        return DefaultKafkaProducerFactory(config)
-    }
-
-    @Bean
-    fun orderDtoKafkaTemplate(producerFactory: ProducerFactory<String, OrderDto>): KafkaTemplate<String, OrderDto> {
-        return KafkaTemplate(producerFactory)
-    }
-
-    @Bean
-    fun voidProducerFactory(): ProducerFactory<String, Void> {
-        var config = mapOf(
-            Pair(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"),
-            Pair(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java),
-            Pair(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, VoidSerializer::class.java)
-        )
-
-        return DefaultKafkaProducerFactory(config)
-    }
-
-    @Bean
-    fun voidKafkaTemplate(producerFactory: ProducerFactory<String, Void>): KafkaTemplate<String, Void> {
-        return KafkaTemplate(producerFactory)
-    }
-
-    @Bean
-    fun applicationRunner(): ApplicationRunner {
-        return ApplicationRunner {
-
-        }
-    }
 
     // configure this bean since Spring Boot doesn't autoconfigure it automatically yet
     @Bean(ReactiveNeo4jRepositoryConfigurationExtension.DEFAULT_TRANSACTION_MANAGER_BEAN_NAME)

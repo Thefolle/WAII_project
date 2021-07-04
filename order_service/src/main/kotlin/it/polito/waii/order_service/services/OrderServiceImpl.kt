@@ -68,4 +68,32 @@ class OrderServiceImpl: OrderService {
             }
     }
 
+    @Transactional
+    override fun getOrderById(id: Long): Mono<OrderDto> {
+        return orderRepository
+            .findById(id)
+            .map { it.toDto() }
+    }
+
+    @Transactional
+    override fun updateOrder(orderDto: OrderDto): Mono<Void> {
+        return orderRepository
+            .save(
+                Order(
+                    null,
+                    Customer(orderDto.buyerId),
+                    orderDto.productIds.map { Product(it) }.toSet(),
+                    orderDto.status!!,
+                    orderDto.deliveries.map { Delivery(null, it.shippingAddress, it.warehouseId) }.toSet()
+                )
+            )
+            .then()
+    }
+
+    @Transactional
+    override fun deleteOrderById(id: Long): Mono<Void> {
+        return orderRepository
+            .deleteById(id)
+    }
+
 }
