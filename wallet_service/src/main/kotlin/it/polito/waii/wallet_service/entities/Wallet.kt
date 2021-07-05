@@ -1,16 +1,18 @@
 package it.polito.waii.wallet_service.entities
 
-import javax.persistence.GeneratedValue
-import javax.persistence.GenerationType
-import javax.persistence.Id
+import javax.persistence.*
 import javax.validation.constraints.Min
 
+@Entity
 class Wallet(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     var wid: Long?=0,
+    var ownerUsername: String,
     @Min(value = 0)
-    var balance: Float = 0.0F)
+    var balance: Float = 0.0F,
+    @OneToMany(mappedBy = "wallet")
+    var transactions: MutableList<Transaction>?= mutableListOf< Transaction>())
 {
     fun addBalance(difference: Float): Float {
         if (balance + difference  < 0.0F) {

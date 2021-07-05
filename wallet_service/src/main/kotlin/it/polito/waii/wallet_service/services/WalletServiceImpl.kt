@@ -26,7 +26,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
         val wallet = getWalletbyId(transaction.wid)
         wallet.addBalance(transaction.transactedMoneyAmount)
         val res = Transaction(tid = null,
-                              wid = transaction.wid,
+                              wallet = wallet,
                               transactedMoneyAmount = transaction.transactedMoneyAmount,
                               timestamp = LocalDateTime.now(),
                               isRech = true,
@@ -42,7 +42,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
         if (wallet.balance < transaction.transactedMoneyAmount) throw ResponseStatusException(HttpStatus.FORBIDDEN, "Not enough money!")
         wallet.addBalance(-transaction.transactedMoneyAmount)
         val res = Transaction(tid = null,
-            wid = transaction.wid,
+            wallet = wallet,
             transactedMoneyAmount = transaction.transactedMoneyAmount,
             timestamp = LocalDateTime.now(),
             isRech = false,

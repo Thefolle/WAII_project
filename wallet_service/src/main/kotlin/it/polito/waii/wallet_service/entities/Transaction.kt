@@ -10,7 +10,8 @@ class Transaction(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     var tid: Long?,
-    var wid: Long,
+    @ManyToOne(fetch=FetchType.LAZY)
+    var wallet: Wallet,
     var transactedMoneyAmount: Float,
     var timestamp: LocalDateTime,
     var isRech: Boolean,
@@ -19,7 +20,7 @@ class Transaction(
 
     fun toDto() = TransactionDTO(
         tid = tid,
-        wid = wid,
+        wid = wallet.wid!!,
         transactedMoneyAmount = transactedMoneyAmount,
         timestamp = timestamp,
         isRech = isRech,
