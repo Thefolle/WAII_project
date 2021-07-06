@@ -48,7 +48,6 @@ class OrderController {
     @SendTo("order_service_responses")
     @KafkaListener(
         containerFactory = "getOrdersConcurrentKafkaListenerContainerFactory",
-        containerGroup = "outer_service_group_id",
         topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["1"])],
         splitIterables = false
     )
@@ -61,17 +60,17 @@ class OrderController {
                 println(this)
             }
     }
-//
-//    @SendTo("order_service_responses")
-//    @KafkaListener(
-//        containerFactory = "getOrderByIdConcurrentKafkaListenerContainerFactory",
-//        topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["2"])]
-//    )
-//    fun getOrderById(id: Long): OrderDto {
-//        return orderService
-//            .getOrderById(id)
-//            .block()!!
-//    }
+
+    @SendTo("order_service_responses")
+    @KafkaListener(
+        containerFactory = "getOrderByIdConcurrentKafkaListenerContainerFactory",
+        topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["2"])]
+    )
+    fun getOrderById(id: Long): OrderDto {
+        return orderService
+            .getOrderById(id)
+            .block()!!
+    }
 //
 //    @SendTo("order_service_responses")
 //    @KafkaListener(

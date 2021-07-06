@@ -11,6 +11,7 @@ import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.kafka.support.KafkaNull
 import org.springframework.messaging.support.MessageBuilder
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 import java.nio.ByteBuffer
@@ -26,6 +27,10 @@ class TestController {
 
     @Autowired
     lateinit var stringOrderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDto, Long>
+
+    @Autowired
+    lateinit var stringLongOrderDtoReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Long, OrderDto>
+
 
     @PostMapping
     fun createOrder(): Long {
@@ -87,6 +92,35 @@ class TestController {
                     .build(),
                 Duration.ofSeconds(15),
                 ParameterizedTypeReference.forType<Set<OrderDto>>(type)
+            )
+            .get()
+            .payload
+    }
+
+    @GetMapping("/{id}")
+    fun getOrderById(@PathVariable("id") id: Long) : OrderDto {
+        val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
+        replyPartition.putInt(0)
+        val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
+        correlationId.putInt(2)
+
+        return stringLongOrderDtoReplyingKafkaTemplate
+            .sendAndReceive(
+                MessageBuilder
+                    .withPayload(
+                        id
+                    )
+                    .setHeader(KafkaHeaders.TOPIC, "order_service_requests")
+                    .setHeader(KafkaHeaders.PARTITION_ID, 2)
+                    .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
+                    .setHeader(
+                        KafkaHeaders.REPLY_TOPIC,
+                        "order_service_responses".toByteArray(Charset.defaultCharset())
+                    )
+                    .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
+                    .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
+                    .build(),
+                ParameterizedTypeReference.forType<OrderDto>(OrderDto::class.java)
             )
             .get()
             .payload

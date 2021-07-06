@@ -54,12 +54,19 @@ class ConcurrentMessageListenerContainers {
         return container
     }
 
-    //    @Bean
-//    fun orderDtoConcurrentMessageListenerContainer(@Qualifier("createOrderConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, OrderDto>): ConcurrentMessageListenerContainer<String, OrderDto> {
-//        var container = containerFactory.createContainer("replies")
-//        container.containerProperties.setGroupId("order_service_group_id")
-//
-//        return container
-//    }
+    @Bean
+    fun orderDtoConcurrentMessageListenerContainer(@Qualifier("orderDtoConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, OrderDto>): ConcurrentMessageListenerContainer<String, OrderDto> {
+        var container = containerFactory.createContainer("order_service_responses")
+        container.containerProperties.setGroupId("order_service_group_id_3")
+
+        val consumerAwareBatchErrorHandler = ConsumerAwareBatchErrorHandler { thrownException, data, consumer ->
+            if (thrownException is SerializationException) {
+                consumer.seek(TopicPartition("order_service_responses", 0), consumer.position(TopicPartition("order_service_responses", 0)) + 1)
+            }
+        }
+        container.setBatchErrorHandler(consumerAwareBatchErrorHandler)
+
+        return container
+    }
 
 }
