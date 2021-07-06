@@ -11,9 +11,7 @@ data class Order(
     @Id
     @GeneratedValue
     val id: Long?,
-    @Relationship(type = "PLACED_BY", direction = Relationship.Direction.OUTGOING)
     val buyer: Customer,
-    @Relationship(value = "CONTAINS_PRODUCT", direction = Relationship.Direction.OUTGOING)
     val products: Set<Product>,
     val status: OrderStatus,
     val deliveries: Set<Delivery>
@@ -22,6 +20,7 @@ data class Order(
         id,
         buyer.id!!,
         products.map { it.id!! }.toSet(),
-        deliveries.map { it.toDto() }.toSet()
+        deliveries.map { it.toDto() }.toSet(),
+        status
     )
 }

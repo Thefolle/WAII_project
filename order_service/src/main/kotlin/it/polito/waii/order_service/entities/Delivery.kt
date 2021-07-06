@@ -11,9 +11,9 @@ data class Delivery(
     @GeneratedValue
     val id: Long?,
     val shippingAddress: String,
-    val warehouseId: Long
+    val warehouse: Warehouse
 ) {
     fun toDto() = DeliveryDto(
-        shippingAddress, warehouseId
+        shippingAddress, warehouse.id!!
     )
 }

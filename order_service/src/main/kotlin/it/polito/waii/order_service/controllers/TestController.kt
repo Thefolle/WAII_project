@@ -23,43 +23,9 @@ class TestController {
 
     @Autowired
     lateinit var stringVoidSetOrderDtoReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Void, Set<OrderDto>>
-//
-//    @Autowired
-//    lateinit var orderDtoKafkaTemplate: KafkaTemplate<String, OrderDto>
 
     @Autowired
     lateinit var stringOrderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDto, Long>
-
-
-    @GetMapping
-    fun getOrders(): Set<OrderDto> {
-        val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
-        replyPartition.putInt(0)
-        val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
-        correlationId.putInt(1)
-        val objectMapper = ObjectMapper()
-        val type = objectMapper.typeFactory.constructParametricType(Set::class.java, OrderDto::class.java)
-
-        return stringVoidSetOrderDtoReplyingKafkaTemplate
-            .sendAndReceive(
-                MessageBuilder
-                    .withPayload(KafkaNull.INSTANCE)
-                    .setHeader(KafkaHeaders.TOPIC, "order_service_requests")
-                    .setHeader(KafkaHeaders.PARTITION_ID, 1)
-                    .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
-                    .setHeader(
-                        KafkaHeaders.REPLY_TOPIC,
-                        "order_service_responses".toByteArray(Charset.defaultCharset())
-                    )
-                    .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
-                    .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
-                    .build(),
-                Duration.ofSeconds(15),
-                ParameterizedTypeReference.forType<Set<OrderDto>>(type)
-            )
-            .get()
-            .payload
-    }
 
     @PostMapping
     fun createOrder(): Long {
@@ -91,6 +57,36 @@ class TestController {
                     .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
                     .build(),
                 ParameterizedTypeReference.forType(Long::class.java)
+            )
+            .get()
+            .payload
+    }
+
+    @GetMapping
+    fun getOrders(): Set<OrderDto> {
+        val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
+        replyPartition.putInt(0)
+        val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
+        correlationId.putInt(1)
+        val objectMapper = ObjectMapper()
+        val type = objectMapper.typeFactory.constructParametricType(Set::class.java, OrderDto::class.java)
+
+        return stringVoidSetOrderDtoReplyingKafkaTemplate
+            .sendAndReceive(
+                MessageBuilder
+                    .withPayload(KafkaNull.INSTANCE)
+                    .setHeader(KafkaHeaders.TOPIC, "order_service_requests")
+                    .setHeader(KafkaHeaders.PARTITION_ID, 1)
+                    .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
+                    .setHeader(
+                        KafkaHeaders.REPLY_TOPIC,
+                        "order_service_responses".toByteArray(Charset.defaultCharset())
+                    )
+                    .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
+                    .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
+                    .build(),
+                Duration.ofSeconds(15),
+                ParameterizedTypeReference.forType<Set<OrderDto>>(type)
             )
             .get()
             .payload

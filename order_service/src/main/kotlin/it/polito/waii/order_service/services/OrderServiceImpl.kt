@@ -55,7 +55,7 @@ class OrderServiceImpl: OrderService {
         val products = orderDto.productIds.map { Product(it) }.toSet()
 
         return orderRepository
-            .save(Order(null, customer, products, OrderStatus.ISSUED, orderDto.deliveries.map { Delivery(null, it.shippingAddress, it.warehouseId) }.toSet()))
+            .save(Order(null, customer, products, OrderStatus.ISSUED, orderDto.deliveries.map { Delivery(null, it.shippingAddress, Warehouse(it.warehouseId)) }.toSet()))
             .map { it.id }
     }
 
@@ -84,7 +84,7 @@ class OrderServiceImpl: OrderService {
                     Customer(orderDto.buyerId),
                     orderDto.productIds.map { Product(it) }.toSet(),
                     orderDto.status!!,
-                    orderDto.deliveries.map { Delivery(null, it.shippingAddress, it.warehouseId) }.toSet()
+                    orderDto.deliveries.map { Delivery(null, it.shippingAddress, Warehouse(it.warehouseId)) }.toSet()
                 )
             )
             .then()
