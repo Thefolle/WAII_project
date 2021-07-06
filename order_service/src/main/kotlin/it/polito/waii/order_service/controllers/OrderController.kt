@@ -42,24 +42,25 @@ class OrderController {
     fun createOrder(orderDto: OrderDto): Long {
         return orderService
             .createOrder(orderDto)
-            .doOnSuccess { println(it) }
             .block()!!
     }
 
-//    @SendTo("order_service_responses")
-//    @KafkaListener(
-//        containerFactory = "getOrdersConcurrentKafkaListenerContainerFactory",
-//        topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["1"])]
-//    )
-//    fun getOrders(@Payload(required = false) empty: Void?): Set<OrderDto> {
-//        return orderService
-//            .getOrders()
-//            .toIterable()
-//            .toSet()
-//            .apply {
-//                println(this)
-//            }
-//    }
+    @SendTo("order_service_responses")
+    @KafkaListener(
+        containerFactory = "getOrdersConcurrentKafkaListenerContainerFactory",
+        containerGroup = "outer_service_group_id",
+        topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["1"])],
+        splitIterables = false
+    )
+    fun getOrders(@Payload(required = false) empty: Void?): Set<OrderDto> {
+        return orderService
+            .getOrders()
+            .toIterable()
+            .toSet()
+            .apply {
+                println(this)
+            }
+    }
 //
 //    @SendTo("order_service_responses")
 //    @KafkaListener(

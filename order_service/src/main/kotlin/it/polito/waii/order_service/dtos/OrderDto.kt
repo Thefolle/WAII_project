@@ -8,4 +8,7 @@ class OrderDto(
     val productIds: Set<Long>,
     val deliveries: Set<DeliveryDto>,
     val status: OrderStatus? = null
-)
+) {
+    // no-arg constructor for Jackson
+    constructor() : this(null, 0, setOf(), setOf(), null)
+}

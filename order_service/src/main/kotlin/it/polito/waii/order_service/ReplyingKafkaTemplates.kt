@@ -12,7 +12,16 @@ class ReplyingKafkaTemplates {
 
     @Bean
     fun orderDtoLongReplyingKafkaTemplate(producerFactory: ProducerFactory<String, OrderDto>, container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, OrderDto, Long> {
-        return ReplyingKafkaTemplate(producerFactory, container)
+        val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
+        replyingKafkaTemplate.setSharedReplyTopic(true)
+        return replyingKafkaTemplate
+    }
+
+    @Bean
+    fun voidSetOrderDtoReplyingKafkaTemplate(producerFactory: ProducerFactory<String, Void>, container: ConcurrentMessageListenerContainer<String, Set<OrderDto>>): ReplyingKafkaTemplate<String, Void, Set<OrderDto>> {
+        val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
+        replyingKafkaTemplate.setSharedReplyTopic(true)
+        return replyingKafkaTemplate
     }
 
 }

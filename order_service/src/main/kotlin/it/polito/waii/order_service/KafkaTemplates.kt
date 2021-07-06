@@ -24,9 +24,9 @@ class KafkaTemplates {
         return KafkaTemplate(producerFactory)
     }
 
-    //    @Bean
-//    fun setOrderDtoKafkaTemplate(producerFactory: ProducerFactory<String, Set<OrderDto>>): KafkaTemplate<String, Set<OrderDto>> {
-//        return KafkaTemplate(producerFactory)
-//    }
+    @Bean
+    fun setOrderDtoKafkaTemplate(producerFactory: ProducerFactory<String, Set<OrderDto>>): KafkaTemplate<String, Set<OrderDto>> {
+        return KafkaTemplate(producerFactory)
+    }
 
 }

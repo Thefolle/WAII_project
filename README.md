@@ -97,3 +97,10 @@ class OrderController {
 
 The project is furnished with a module to properly configure the Kafka server, such as by creating topics. This service acts as a script, since it startups, configures Kafka and shutdowns immediately afterwards. In other words, it only works during the startup of the system.
 
+## Miscellaneous
+
+### An unresolved bug
+
+The bug is a JsonParseException that occurs randomly at deserialization time; Jira has the pertinent issue still unresolved: https://issues.apache.org/jira/browse/DRILL-4831
+
+You may solve the issue by cleaning the topics and restarting the whole system multiple times.
