@@ -69,4 +69,19 @@ class ConcurrentMessageListenerContainers {
         return container
     }
 
+    @Bean
+    fun voidConcurrentMessageListenerContainer(@Qualifier("voidConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, Void>): ConcurrentMessageListenerContainer<String, Void> {
+        var container = containerFactory.createContainer("order_service_responses")
+        container.containerProperties.setGroupId("order_service_group_id_4")
+
+        val consumerAwareBatchErrorHandler = ConsumerAwareBatchErrorHandler { thrownException, data, consumer ->
+            if (thrownException is SerializationException) {
+                consumer.seek(TopicPartition("order_service_responses", 0), consumer.position(TopicPartition("order_service_responses", 0)) + 1)
+            }
+        }
+        container.setBatchErrorHandler(consumerAwareBatchErrorHandler)
+
+        return container
+    }
+
 }

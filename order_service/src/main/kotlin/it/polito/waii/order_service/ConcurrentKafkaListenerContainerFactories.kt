@@ -72,15 +72,25 @@ class ConcurrentKafkaListenerContainerFactories {
 
         return container
     }
-//
-//    @Bean
-//    fun updateOrderConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, OrderDto>, replyTemplate: KafkaTemplate<String, Void>): ConcurrentKafkaListenerContainerFactory<String, OrderDto> {
-//        var container = ConcurrentKafkaListenerContainerFactory<String, OrderDto>()
-//        container.consumerFactory = consumerFactory
-//        container.setReplyTemplate(replyTemplate)
-//
-//        return container
-//    }
+
+    // used by updateOrder consumer
+    @Bean
+    fun updateOrderConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, OrderDto>, @Qualifier("voidKafkaTemplate") replyTemplate: KafkaTemplate<String, Void>): ConcurrentKafkaListenerContainerFactory<String, OrderDto> {
+        var container = ConcurrentKafkaListenerContainerFactory<String, OrderDto>()
+        container.consumerFactory = consumerFactory
+        container.setReplyTemplate(replyTemplate)
+
+        return container
+    }
+
+    // used by updateOrder producer
+    @Bean
+    fun voidConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, Void>): ConcurrentKafkaListenerContainerFactory<String, Void> {
+        var container = ConcurrentKafkaListenerContainerFactory<String, Void>()
+        container.consumerFactory = consumerFactory
+
+        return container
+    }
 //
 //    @Bean
 //    fun deleteOrderByIdConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, Long>, replyTemplate: KafkaTemplate<String, Void>): ConcurrentKafkaListenerContainerFactory<String, Long> {

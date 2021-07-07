@@ -6,14 +6,12 @@ import it.polito.waii.order_service.dtos.OrderDto
 import it.polito.waii.order_service.entities.OrderStatus
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.MediaType
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.kafka.support.KafkaNull
 import org.springframework.messaging.support.MessageBuilder
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.time.Duration
@@ -31,6 +29,8 @@ class TestController {
     @Autowired
     lateinit var stringLongOrderDtoReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Long, OrderDto>
 
+    @Autowired
+    lateinit var stringOrderDtoVoidReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDto, Void>
 
     @PostMapping
     fun createOrder(): Long {
@@ -124,6 +124,26 @@ class TestController {
             )
             .get()
             .payload
+    }
+
+    @PatchMapping("/{id}", consumes = [MediaType.APPLICATION_JSON_VALUE])
+    fun updateOrder(@PathVariable("id") id: Long, @RequestBody orderDto: OrderDto) {
+        val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
+        replyPartition.putInt(0)
+        val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
+        correlationId.putInt(3)
+
+        stringOrderDtoVoidReplyingKafkaTemplate
+            .send(MessageBuilder
+                .withPayload(
+                    orderDto
+                )
+                .setHeader(KafkaHeaders.TOPIC, "order_service_requests")
+                .setHeader(KafkaHeaders.PARTITION_ID, 3)
+                .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
+                .build()
+            )
+            .get()
     }
 
 }

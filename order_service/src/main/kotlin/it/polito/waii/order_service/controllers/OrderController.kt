@@ -5,6 +5,7 @@ import it.polito.waii.order_service.services.OrderService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.annotation.TopicPartition
+import org.springframework.kafka.support.KafkaNull
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.stereotype.Component
@@ -71,17 +72,16 @@ class OrderController {
             .getOrderById(id)
             .block()!!
     }
-//
-//    @SendTo("order_service_responses")
-//    @KafkaListener(
-//        containerFactory = "updateOrderConcurrentKafkaListenerContainerFactory",
-//        topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["3"])]
-//    )
-//    fun updateOrder(orderDto: OrderDto) {
-//        orderService
-//            .updateOrder(orderDto)
-//            .block()
-//    }
+
+    @KafkaListener(
+        containerFactory = "updateOrderConcurrentKafkaListenerContainerFactory",
+        topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["3"])]
+    )
+    fun updateOrder(orderDto: OrderDto) {
+        orderService
+            .updateOrder(orderDto)
+            .block()
+    }
 //
 //    @SendTo("order_service_responses")
 //    @KafkaListener(
