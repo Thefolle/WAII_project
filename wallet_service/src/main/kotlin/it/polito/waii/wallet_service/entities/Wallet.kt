@@ -13,7 +13,7 @@ class Wallet(
     @Min(value = 0)
     var balance: Float = 0.0F,
     @OneToMany(mappedBy = "wallet")
-    var transactions: MutableList<Transaction>?= mutableListOf< Transaction>())
+    var transactions: MutableList<Transaction>?= mutableListOf<Transaction>())
 {
     fun addBalance(difference: Float): Float {
         if (balance + difference  < 0.0F) {

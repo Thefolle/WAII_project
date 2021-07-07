@@ -47,22 +47,23 @@ class GatewayApplication{
             }
             .route("Orders"){
                 it -> it.path("/orders/**") //end point esterno da rimappare
-                .filters { f -> f.rewritePath("/orders", "") }
+                .filters { f -> f.rewritePath("/orders", "/") }
                 .uri("lb://order") //nome del service interno
             }
             .route("Products"){
                     it -> it.path("/products/**") //end point esterno da rimappare
-                .filters { f -> f.rewritePath("/products", "") }
+                .filters { f -> f.rewritePath("/products", "/") }
                 .uri("lb://warehouse") //nome del service interno
             }
             .route("Warehouses"){
                     it -> it.path("/warehouses/**") //end point esterno da rimappare
-                .filters { f -> f.rewritePath("/warehouses", "") }
+                .filters { f -> f.rewritePath("/warehouses", "/") }
                 .uri("lb://warehouse") //nome del service interno
             }
             .route("Wallets"){
                     it -> it.path("/wallets/**") //end point esterno da rimappare
-                .filters { f -> f.rewritePath("/wallets", "") }
+                .filters { f -> f.circuitBreaker { it -> it.setFallbackUri("forward:/failure") } //circuit breaker to handle unavailability
+                                f.rewritePath("/wallets", "/") }
                 .uri("lb://wallet") //nome del service interno
             }
             .build()

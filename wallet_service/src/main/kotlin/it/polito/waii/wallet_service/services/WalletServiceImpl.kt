@@ -32,7 +32,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
                               timestamp = LocalDateTime.now(),
                               isRech = true,
                               orderId = null,
-                              rechargeId = transaction.rechargeId)
+                              rechargeId = null)
         transactionRepository.save(res)
         return res.toDto()
     }
@@ -48,7 +48,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
             timestamp = LocalDateTime.now(),
             isRech = false,
             orderId = transaction.orderId,
-            rechargeId = null)
+            rechargeId = 0)
         transactionRepository.save(res)
         return res.toDto()
     }
@@ -64,6 +64,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
     override fun getTransaction(walletId: Long, transactionId: Long): TransactionDTO {
         val transactionOptional = transactionRepository.findById(transactionId)
         if (transactionOptional.isEmpty) throw ResponseStatusException(HttpStatus.NOT_FOUND, "No transaction with id $transactionId exists.")
+        if (transactionOptional.get().wallet.wid != walletId) throw ResponseStatusException(HttpStatus.NOT_FOUND, "No transaction with id $transactionId in wallet $walletId exists.")
         return transactionOptional.get().toDto()
     }
 
@@ -76,7 +77,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
     }
 
     override fun createWallet(username: String): WalletDTO {
-        var wallet  = Wallet(null, username, 0.0F)
+        val wallet  = Wallet(null, username, 0.0F)
         walletRepository.save(wallet)
         return wallet.toDTO()
     }
