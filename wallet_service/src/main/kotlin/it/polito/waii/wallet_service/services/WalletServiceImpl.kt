@@ -1,6 +1,7 @@
 package it.polito.waii.wallet_service.services
 
 import it.polito.waii.wallet_service.dtos.TransactionDTO
+import it.polito.waii.wallet_service.dtos.WalletDTO
 import it.polito.waii.wallet_service.entities.Transaction
 import it.polito.waii.wallet_service.entities.Wallet
 import it.polito.waii.wallet_service.repositories.TransactionRepository
@@ -72,6 +73,18 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
         return transactionRepository
             .findByTimestampBetween(startDate, endDate).map { it.toDto() }
             .filter { it.wid == walletId }
+    }
+
+    override fun createWallet(username: String): WalletDTO {
+        var wallet  = Wallet(null, username, 0.0F)
+        walletRepository.save(wallet)
+        return wallet.toDTO()
+    }
+
+    override fun getWallet(walletId: Long): WalletDTO {
+        val walletOptional = walletRepository.findById(walletId)
+        if(walletOptional.isEmpty) throw  ResponseStatusException(HttpStatus.NOT_FOUND, "Wallet doesn't exists with id $walletId.")
+        return walletOptional.get().toDTO()
     }
 
 }

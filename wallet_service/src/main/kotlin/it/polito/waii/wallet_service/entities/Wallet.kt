@@ -1,5 +1,6 @@
 package it.polito.waii.wallet_service.entities
 
+import it.polito.waii.wallet_service.dtos.WalletDTO
 import javax.persistence.*
 import javax.validation.constraints.Min
 
@@ -23,4 +24,10 @@ class Wallet(
 
         return balance
     }
+
+    fun toDTO() = WalletDTO(
+        wid = wid,
+        ownerUsername = ownerUsername,
+        balance = balance
+    )
 }
