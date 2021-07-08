@@ -12,7 +12,7 @@ interface WalletService {
 
     fun getTransactions(walletId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<TransactionDTO>
 
-    fun createWallet(username: String): WalletDTO
+    fun createWallet(): WalletDTO
 
     fun getWallet(walletId: Long): WalletDTO
 }

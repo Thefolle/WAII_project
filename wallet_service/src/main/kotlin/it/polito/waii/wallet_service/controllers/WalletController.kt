@@ -39,8 +39,8 @@ class WalletController(private val walletServiceImpl: WalletServiceImpl) {
     }
 
     @PostMapping("/")
-    fun createWallet(@RequestBody username: String): ResponseEntity<WalletDTO>{
-        return  ResponseEntity.status(HttpStatus.CREATED).body(walletServiceImpl.createWallet(username))
+    fun createWallet(): ResponseEntity<WalletDTO>{
+        return  ResponseEntity.status(HttpStatus.CREATED).body(walletServiceImpl.createWallet())
     }
 
     @GetMapping("/{walletId}")
