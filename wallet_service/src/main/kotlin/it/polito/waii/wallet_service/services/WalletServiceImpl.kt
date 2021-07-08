@@ -30,6 +30,15 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
         }
     }
 
+    private fun getUserRole(): Boolean {
+        val principal = SecurityContextHolder.getContext().authentication.principal
+        return if(principal is UserDTO){
+            principal.isAdmin
+        } else {
+            false
+        }
+    }
+
     private fun getWalletbyId(walletId: Long): Wallet {
         val walletOptional = walletRepository.findById(walletId)
         if (walletOptional.isEmpty) throw ResponseStatusException(HttpStatus.NOT_FOUND, "No wallet with id $walletId exists.")
@@ -109,8 +118,8 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
         val username = getUsername()
         val walletOptional = walletRepository.findById(walletId)
         if(walletOptional.isEmpty) throw  ResponseStatusException(HttpStatus.NOT_FOUND, "Wallet doesn't exists with id $walletId.")
-        //Todo: if I am admin I can access even if the wallet is not mine!
-        if (walletOptional.get().ownerUsername != username) throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this wallet!")
+        val isAdmin = getUserRole()
+        if (!isAdmin && walletOptional.get().ownerUsername != username) throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this wallet!")
         return walletOptional.get().toDTO()
     }
 
