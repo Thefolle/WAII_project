@@ -1,6 +1,7 @@
 package it.polito.waii.wallet_service.controllers
 
 import it.polito.waii.wallet_service.dtos.TransactionDTO
+import it.polito.waii.wallet_service.dtos.WalletDTO
 import it.polito.waii.wallet_service.services.WalletServiceImpl
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -35,6 +36,16 @@ class WalletController(private val walletServiceImpl: WalletServiceImpl) {
         return if (result.isEmpty())
             ResponseEntity.status(HttpStatus.NO_CONTENT).build()
         else ResponseEntity.status(HttpStatus.OK).body(result)
+    }
+
+    @PostMapping("/")
+    fun createWallet(@RequestBody username: String): ResponseEntity<WalletDTO>{
+        return  ResponseEntity.status(HttpStatus.CREATED).body(walletServiceImpl.createWallet(username))
+    }
+
+    @GetMapping("/{walletId}")
+    fun getWallet(@PathVariable("walletId") walletId: Long): ResponseEntity<WalletDTO>{
+        return ResponseEntity.status(HttpStatus.OK).body(walletServiceImpl.getWallet(walletId))
     }
 
 }
