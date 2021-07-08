@@ -91,14 +91,15 @@ class ConcurrentKafkaListenerContainerFactories {
 
         return container
     }
-//
-//    @Bean
-//    fun deleteOrderByIdConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, Long>, replyTemplate: KafkaTemplate<String, Void>): ConcurrentKafkaListenerContainerFactory<String, Long> {
-//        var container = ConcurrentKafkaListenerContainerFactory<String, Long>()
-//        container.consumerFactory = consumerFactory
-//        container.setReplyTemplate(replyTemplate)
-//
-//        return container
-//    }
+
+    // used by deleteOrderById consumer
+    @Bean
+    fun deleteOrderByIdConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, Long>, @Qualifier("voidKafkaTemplate") replyTemplate: KafkaTemplate<String, Void>): ConcurrentKafkaListenerContainerFactory<String, Long> {
+        var container = ConcurrentKafkaListenerContainerFactory<String, Long>()
+        container.consumerFactory = consumerFactory
+        container.setReplyTemplate(replyTemplate)
+
+        return container
+    }
 
 }

@@ -32,6 +32,9 @@ class TestController {
     @Autowired
     lateinit var stringOrderDtoVoidReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDto, Void>
 
+    @Autowired
+    lateinit var stringLongVoidReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Long, Void>
+
     @PostMapping
     fun createOrder(): Long {
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
@@ -128,10 +131,6 @@ class TestController {
 
     @PatchMapping("/{id}", consumes = [MediaType.APPLICATION_JSON_VALUE])
     fun updateOrder(@PathVariable("id") id: Long, @RequestBody orderDto: OrderDto) {
-        val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
-        replyPartition.putInt(0)
-        val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
-        correlationId.putInt(3)
 
         stringOrderDtoVoidReplyingKafkaTemplate
             .send(MessageBuilder
@@ -140,6 +139,22 @@ class TestController {
                 )
                 .setHeader(KafkaHeaders.TOPIC, "order_service_requests")
                 .setHeader(KafkaHeaders.PARTITION_ID, 3)
+                .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
+                .build()
+            )
+            .get()
+    }
+
+    @DeleteMapping("/{id}")
+    fun deleteOrderById(@PathVariable("id") id: Long) {
+
+        stringLongVoidReplyingKafkaTemplate
+            .send(MessageBuilder
+                .withPayload(
+                    id
+                )
+                .setHeader(KafkaHeaders.TOPIC, "order_service_requests")
+                .setHeader(KafkaHeaders.PARTITION_ID, 4)
                 .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
                 .build()
             )

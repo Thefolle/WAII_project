@@ -82,16 +82,15 @@ class OrderController {
             .updateOrder(orderDto)
             .block()
     }
-//
-//    @SendTo("order_service_responses")
-//    @KafkaListener(
-//        containerFactory = "deleteOrderByIdConcurrentKafkaListenerContainerFactory",
-//        topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["4"])]
-//    )
-//    fun deleteOrderById(id: Long) {
-//        orderService
-//            .deleteOrderById(id)
-//            .block()
-//    }
+
+    @KafkaListener(
+        containerFactory = "deleteOrderByIdConcurrentKafkaListenerContainerFactory",
+        topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["4"])]
+    )
+    fun deleteOrderById(id: Long) {
+        orderService
+            .deleteOrderById(id)
+            .block()
+    }
 
 }

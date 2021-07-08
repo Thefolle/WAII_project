@@ -39,4 +39,11 @@ class ReplyingKafkaTemplates {
         return replyingKafkaTemplate
     }
 
+    @Bean
+    fun longVoidReplyingKafkaTemplate(producerFactory: ProducerFactory<String, Long>, container: ConcurrentMessageListenerContainer<String, Void>): ReplyingKafkaTemplate<String, Long, Void> {
+        val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
+        replyingKafkaTemplate.setSharedReplyTopic(true)
+        return replyingKafkaTemplate
+    }
+
 }
