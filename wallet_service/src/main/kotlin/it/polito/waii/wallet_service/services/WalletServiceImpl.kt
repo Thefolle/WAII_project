@@ -45,9 +45,8 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
         return walletOptional.get()
     }
 
-    //Todo: for some reason, this control fails and I can recharge even if I am not ADMIN.
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    fun doRecharge(transaction: TransactionDTO): TransactionDTO {
+    override fun doRecharge(transaction: TransactionDTO): TransactionDTO {
         val wallet = getWalletbyId(transaction.wid)
         wallet.addBalance(transaction.transactedMoneyAmount)
         val recharge = Recharge(rid = null,
@@ -65,7 +64,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
         return res.toDto()
     }
 
-    fun doCharge(transaction: TransactionDTO): TransactionDTO {
+    override fun doCharge(transaction: TransactionDTO): TransactionDTO {
         val wallet = getWalletbyId(transaction.wid)
         //check if I am the owner of the wallet
         val username = getUsername()
@@ -84,17 +83,13 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
         return res.toDto()
     }
 
-    override fun performTransaction(transaction: TransactionDTO): TransactionDTO {
-
-        return if (transaction.isRech)
-            doRecharge(transaction)
-        else
-            doCharge(transaction)
-    }
-
     override fun getTransaction(walletId: Long, transactionId: Long): TransactionDTO {
         val transactionOptional = transactionRepository.findById(transactionId)
         if (transactionOptional.isEmpty) throw ResponseStatusException(HttpStatus.NOT_FOUND, "No transaction with id $transactionId exists.")
+        val isAdmin = getUserRole()
+        val walletOptional = walletRepository.findById(walletId)
+        val username = getUsername()
+        if (!isAdmin && walletOptional.get().ownerUsername != username) throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this wallet!")
         if (transactionOptional.get().wallet.wid != walletId) throw ResponseStatusException(HttpStatus.NOT_FOUND, "No transaction with id $transactionId in wallet $walletId exists.")
         return transactionOptional.get().toDto()
     }

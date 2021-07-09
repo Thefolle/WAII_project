@@ -18,7 +18,10 @@ class WalletController(private val walletServiceImpl: WalletServiceImpl) {
     @PostMapping("/{walletId}/transactions")
     fun performTransaction(@PathVariable("walletId") walletId: Long,
                            @RequestBody transaction: TransactionDTO): ResponseEntity<TransactionDTO> {
-        return ResponseEntity.status(HttpStatus.OK).body(walletServiceImpl.performTransaction(transaction))
+        return if (transaction.isRech)
+            ResponseEntity.status(HttpStatus.OK).body(walletServiceImpl.doRecharge(transaction))
+        else
+            ResponseEntity.status(HttpStatus.OK).body(walletServiceImpl.doCharge(transaction))
     }
 
     @GetMapping("/{walletId}/transactions/{transactionId}")

@@ -4,6 +4,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -13,6 +14,7 @@ import javax.servlet.http.HttpServletResponse
 
 @SpringBootApplication
 @EnableEurekaClient
+//@EnableAspectJAutoProxy(proxyTargetClass = true)
 class WalletServiceApplication{
 
     @Bean
