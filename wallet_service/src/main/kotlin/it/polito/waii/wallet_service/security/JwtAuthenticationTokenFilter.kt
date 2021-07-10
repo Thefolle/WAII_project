@@ -1,4 +1,4 @@
-package it.polito.waii.catalogue_service.security
+package it.polito.waii.wallet_service.security
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -22,7 +22,7 @@ class JwtAuthenticationTokenFilter(val jwtUtils: JwtUtils): OncePerRequestFilter
         if ( header != null && header.startsWith("Bearer ")) {
             token = header.substring(7)
             if (jwtUtils.validateJwtToken(token)) {
-                println("Sono nel filter JWT - Catalogue")
+                println("Sono nel filter JWT - Wallet")
                 val userDetailsDTO = jwtUtils.getDetailsFromJwtToken(token)
                 println(userDetailsDTO.toJson())
                 val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(userDetailsDTO, null, userDetailsDTO.authorities)

@@ -16,8 +16,8 @@ class Transaction(
     var timestamp: LocalDateTime,
     var isRech: Boolean,
     var orderId: Long?,
-    //Todo: add a recharge entity to support discrimination between orders and recharges transactions
-    var rechargeId: Long?){
+    @OneToOne
+    var recharge: Recharge?){
 
     fun toDto() = TransactionDTO(
         tid = tid,
@@ -26,6 +26,6 @@ class Transaction(
         timestamp = timestamp,
         isRech = isRech,
         orderId = orderId,
-        rechargeId = rechargeId
+        rechargeId = recharge?.rid
     )
 }

@@ -18,7 +18,10 @@ class WalletController(private val walletServiceImpl: WalletServiceImpl) {
     @PostMapping("/{walletId}/transactions")
     fun performTransaction(@PathVariable("walletId") walletId: Long,
                            @RequestBody transaction: TransactionDTO): ResponseEntity<TransactionDTO> {
-        return ResponseEntity.status(HttpStatus.OK).body(walletServiceImpl.performTransaction(transaction))
+        return if (transaction.isRech)
+            ResponseEntity.status(HttpStatus.OK).body(walletServiceImpl.doRecharge(transaction))
+        else
+            ResponseEntity.status(HttpStatus.OK).body(walletServiceImpl.doCharge(transaction))
     }
 
     @GetMapping("/{walletId}/transactions/{transactionId}")
@@ -39,8 +42,8 @@ class WalletController(private val walletServiceImpl: WalletServiceImpl) {
     }
 
     @PostMapping("/")
-    fun createWallet(@RequestBody username: String): ResponseEntity<WalletDTO>{
-        return  ResponseEntity.status(HttpStatus.CREATED).body(walletServiceImpl.createWallet(username))
+    fun createWallet(): ResponseEntity<WalletDTO>{
+        return  ResponseEntity.status(HttpStatus.CREATED).body(walletServiceImpl.createWallet())
     }
 
     @GetMapping("/{walletId}")
