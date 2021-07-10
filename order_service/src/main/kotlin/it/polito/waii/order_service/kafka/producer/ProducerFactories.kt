@@ -1,19 +1,15 @@
-package it.polito.waii.order_service
+package it.polito.waii.order_service.kafka.producer
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import it.polito.waii.order_service.dtos.OrderDto
-import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.LongSerializer
-import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.kafka.common.serialization.VoidSerializer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory
 import org.springframework.kafka.core.DefaultKafkaProducerFactory
 import org.springframework.kafka.core.ProducerFactory
-import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.kafka.support.serializer.JsonSerializer
 
 @Configuration

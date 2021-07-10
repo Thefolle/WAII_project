@@ -1,4 +1,4 @@
-package it.polito.waii.order_service
+package it.polito.waii.order_service.kafka.consumer
 
 import it.polito.waii.order_service.dtos.OrderDto
 import org.apache.kafka.common.errors.SerializationException
@@ -16,7 +16,6 @@ import org.springframework.retry.support.RetryTemplateBuilder
 @Configuration
 class ConcurrentKafkaListenerContainerFactories {
 
-    // Used by createOrder consumer
     @Bean
     fun createOrderConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, OrderDto>, @Qualifier("longKafkaTemplate") replyTemplate: KafkaTemplate<String, Long>): ConcurrentKafkaListenerContainerFactory<String, OrderDto> {
         var container = ConcurrentKafkaListenerContainerFactory<String, OrderDto>()
@@ -26,16 +25,6 @@ class ConcurrentKafkaListenerContainerFactories {
         return container
     }
 
-    // Used by createOrder producer
-    @Bean
-    fun longConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, Long>): ConcurrentKafkaListenerContainerFactory<String, Long> {
-        var container = ConcurrentKafkaListenerContainerFactory<String, Long>()
-        container.consumerFactory = consumerFactory
-
-        return container
-    }
-
-    // Used by getOrders consumer
     @Bean
     fun getOrdersConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, Void>, kafkaTemplate: KafkaTemplate<String, Set<OrderDto>>): ConcurrentKafkaListenerContainerFactory<String, Void> {
         var container = ConcurrentKafkaListenerContainerFactory<String, Void>()
@@ -45,16 +34,6 @@ class ConcurrentKafkaListenerContainerFactories {
         return container
     }
 
-    // Used by getOrders producer
-    @Bean
-    fun setOrderDtoConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, Set<OrderDto>>): ConcurrentKafkaListenerContainerFactory<String, Set<OrderDto>> {
-        var container = ConcurrentKafkaListenerContainerFactory<String, Set<OrderDto>>()
-        container.consumerFactory = consumerFactory
-
-        return container
-    }
-
-    // Used by getOrder consumer
     @Bean
     fun getOrderByIdConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, Long>, @Qualifier("orderDtoKafkaTemplate") replyTemplate: KafkaTemplate<String, OrderDto>): ConcurrentKafkaListenerContainerFactory<String, Long> {
         var container = ConcurrentKafkaListenerContainerFactory<String, Long>()
@@ -64,16 +43,6 @@ class ConcurrentKafkaListenerContainerFactories {
         return container
     }
 
-    // Used by getOrder producer
-    @Bean
-    fun orderDtoConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, OrderDto>): ConcurrentKafkaListenerContainerFactory<String, OrderDto> {
-        var container = ConcurrentKafkaListenerContainerFactory<String, OrderDto>()
-        container.consumerFactory = consumerFactory
-
-        return container
-    }
-
-    // used by updateOrder consumer
     @Bean
     fun updateOrderConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, OrderDto>, @Qualifier("voidKafkaTemplate") replyTemplate: KafkaTemplate<String, Void>): ConcurrentKafkaListenerContainerFactory<String, OrderDto> {
         var container = ConcurrentKafkaListenerContainerFactory<String, OrderDto>()
@@ -83,16 +52,6 @@ class ConcurrentKafkaListenerContainerFactories {
         return container
     }
 
-    // used by updateOrder producer
-    @Bean
-    fun voidConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, Void>): ConcurrentKafkaListenerContainerFactory<String, Void> {
-        var container = ConcurrentKafkaListenerContainerFactory<String, Void>()
-        container.consumerFactory = consumerFactory
-
-        return container
-    }
-
-    // used by deleteOrderById consumer
     @Bean
     fun deleteOrderByIdConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, Long>, @Qualifier("voidKafkaTemplate") replyTemplate: KafkaTemplate<String, Void>): ConcurrentKafkaListenerContainerFactory<String, Long> {
         var container = ConcurrentKafkaListenerContainerFactory<String, Long>()

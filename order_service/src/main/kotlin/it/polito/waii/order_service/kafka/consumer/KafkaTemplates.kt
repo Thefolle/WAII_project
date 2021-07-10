@@ -1,4 +1,4 @@
-package it.polito.waii.order_service
+package it.polito.waii.order_service.kafka.consumer
 
 import it.polito.waii.order_service.dtos.OrderDto
 import org.springframework.context.annotation.Bean
