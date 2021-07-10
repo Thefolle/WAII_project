@@ -12,5 +12,5 @@ class Product(
     var id: Long?,
 
     @OneToMany(mappedBy = "warehouse")
-    var warehouses: Set<Warehouse>
+    var warehouses: MutableSet<ProductWarehouse>
 )

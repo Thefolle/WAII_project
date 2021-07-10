@@ -18,5 +18,5 @@ class Warehouse(
     // current availability is computed on the fly
 
     @OneToMany(mappedBy = "product")
-    var products: Set<Product>
+    var products: MutableSet<ProductWarehouse>
 )
