@@ -10,9 +10,6 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 @RestController
-// this controller's URL are of type "/wallets/something"
-// omit the "wallets" root of the URL, I will manage that inside the API gateway class
-//Pierluigi
 class WalletController(private val walletServiceImpl: WalletServiceImpl) {
 
     @PostMapping("/{walletId}/transactions")
