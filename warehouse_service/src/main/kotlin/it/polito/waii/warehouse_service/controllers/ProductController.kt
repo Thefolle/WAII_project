@@ -12,16 +12,6 @@ import java.net.URI
 @RestController
 class ProductController(val productServiceImpl: ProductServiceImpl) {
 
-//    @GetMapping("/")
-//    fun getProducts(): ResponseEntity<List<ProductDTO>> {
-//        return  ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getProducts())
-//    }
-//
-//    @GetMapping("/")
-//    fun getProductsPerCategory(@RequestParam("category") category: String): ResponseEntity<List<ProductDTO>> {
-//        return  ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getProductsPerCategory(category))
-//    }
-
     @GetMapping("/")
     fun getProductsPerCategory(@RequestParam("category", required = false) category: String?): ResponseEntity<List<ProductDTO>> {
         return if (category == null) ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getProducts())
@@ -30,34 +20,34 @@ class ProductController(val productServiceImpl: ProductServiceImpl) {
 
     @PostMapping("/")
     fun addProduct(@RequestBody product: ProductDTO): ResponseEntity<ProductDTO>{
-        return  ResponseEntity.status(HttpStatus.CREATED).body(productServiceImpl.addProduct(product))
+        return ResponseEntity.status(HttpStatus.CREATED).body(productServiceImpl.addProduct(product))
     }
 
     @PutMapping("/{productId}")
     fun updateProduct(@PathVariable("productId") productId: Long, @RequestBody product: ProductDTO): ResponseEntity<ProductDTO>{
-        return  ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.updateProduct(productId, product))
+        return ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.updateProduct(productId, product))
     }
 
     @PatchMapping("/{productId}")
     fun patchProduct(@PathVariable("productId") productId: Long, @RequestBody product: PatchProductDTO): ResponseEntity<ProductDTO>{
-        return  ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.patchProduct(productId, product))
+        return ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.patchProduct(productId, product))
     }
 
     @DeleteMapping("/{productId}")
     fun deleteProduct(@PathVariable("productId") productId: Long): ResponseEntity<String>{
         productServiceImpl.deleteProduct(productId)
-        return  ResponseEntity.status(HttpStatus.OK).body("Product deleted succesfully!")
+        return ResponseEntity.status(HttpStatus.OK).body("Product deleted succesfully!")
     }
 
     @GetMapping("/{productId}/picture")
     fun getProductPicture(@PathVariable("productId") productId: Long): ResponseEntity<String>{
-        return  ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getProductPicture(productId))
+        return ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getProductPicture(productId))
     }
 
     @PostMapping("/{productId}/picture")
     fun updateProductPicture(@PathVariable("productId") productId: Long, @RequestBody pictureURI: String): ResponseEntity<String>{
         productServiceImpl.updateProductPicture(productId, pictureURI)
-        return  ResponseEntity.status(HttpStatus.OK).body("Product picture updated succesfully!")
+        return ResponseEntity.status(HttpStatus.OK).body("Product picture updated succesfully!")
     }
 
     @GetMapping("/{productId}/warehouses")
