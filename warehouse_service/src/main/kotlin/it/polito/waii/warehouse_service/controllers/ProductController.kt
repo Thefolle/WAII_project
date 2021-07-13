@@ -7,7 +7,6 @@ import it.polito.waii.warehouse_service.services.ProductServiceImpl
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.net.URI
 
 @RestController
 class ProductController(val productServiceImpl: ProductServiceImpl) {
@@ -36,7 +35,7 @@ class ProductController(val productServiceImpl: ProductServiceImpl) {
     @DeleteMapping("/{productId}")
     fun deleteProduct(@PathVariable("productId") productId: Long): ResponseEntity<String>{
         productServiceImpl.deleteProduct(productId)
-        return ResponseEntity.status(HttpStatus.OK).body("Product deleted succesfully!")
+        return ResponseEntity.status(HttpStatus.OK).body("Product deleted successfully!")
     }
 
     @GetMapping("/{productId}/picture")
@@ -47,11 +46,12 @@ class ProductController(val productServiceImpl: ProductServiceImpl) {
     @PostMapping("/{productId}/picture")
     fun updateProductPicture(@PathVariable("productId") productId: Long, @RequestBody pictureURI: String): ResponseEntity<String>{
         productServiceImpl.updateProductPicture(productId, pictureURI)
-        return ResponseEntity.status(HttpStatus.OK).body("Product picture updated succesfully!")
+        return ResponseEntity.status(HttpStatus.OK).body("Product picture updated successfully!")
     }
 
     @GetMapping("/{productId}/warehouses")
     fun getWarehouses(@PathVariable("productId") productId: Long) : ResponseEntity<List<WarehouseDto>> {
         return ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getWarehouses(productId))
     }
+
 }
