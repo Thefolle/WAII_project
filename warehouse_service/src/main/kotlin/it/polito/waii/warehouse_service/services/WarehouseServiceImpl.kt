@@ -1,10 +1,7 @@
 package it.polito.waii.warehouse_service.services
 
 import it.polito.waii.warehouse_service.dtos.*
-import it.polito.waii.warehouse_service.entities.Action
-import it.polito.waii.warehouse_service.entities.CompositeKey
-import it.polito.waii.warehouse_service.entities.ProductWarehouse
-import it.polito.waii.warehouse_service.entities.Warehouse
+import it.polito.waii.warehouse_service.entities.*
 import it.polito.waii.warehouse_service.repositories.ProductRepository
 import it.polito.waii.warehouse_service.repositories.ProductWarehouseRepository
 import it.polito.waii.warehouse_service.repositories.WarehouseRepository
@@ -146,10 +143,39 @@ class WarehouseServiceImpl : WarehouseService {
             HttpStatus.NOT_FOUND,
             "No warehouse with id $warehouseId exists."
         )
-        val productWarehouse = getProductWarehouseById(updateQuantityDTO.productId, warehouseId)
-        if (updateQuantityDTO.action == Action.ADD)
-            productWarehouse.quantity += updateQuantityDTO.quantity
+        val compKey = CompositeKey(updateQuantityDTO.productId, warehouseId)
+        val productWarehouseOptional = productWarehouseRepository.findById(compKey)
+        // if I need to add the quantity...
+        if (updateQuantityDTO.action == Action.ADD){
+            if (productWarehouseOptional.isEmpty){
+                //...and if I don't have the relation, I create a new ProductWarehouse with the specified quantity (if product exists)
+                val productOptional = productRepository.findById(updateQuantityDTO.productId)
+                if (productOptional.isEmpty) throw ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "No product with id ${updateQuantityDTO.productId} exists."
+                )
+                val product = productOptional.get()
+                val warehouse = warehouseRepository.findById(warehouseId).get()
+                // I Chose 10 as a default alarm level (can be modified with another API)
+                val newProductWarehouse = ProductWarehouse(compKey, product, warehouse, updateQuantityDTO.quantity, 10)
+                productWarehouseRepository.save(newProductWarehouse)
+            }
+            else{
+                //...if it already existed I simply add the quantity
+                val productWarehouse = productWarehouseOptional.get()
+                productWarehouse.quantity += updateQuantityDTO.quantity
+            }
+        }
+
+        // if I need to sub the quantity...
         else{
+            //...and if I don't have the relation, I just throw an exception
+            if (productWarehouseOptional.isEmpty) throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "No product with id ${updateQuantityDTO.productId} exists inside warehouse with id $warehouseId."
+            )
+            //else I simply sub the specified quantity and check the alarm level
+            val productWarehouse = productWarehouseOptional.get()
             if (productWarehouse.quantity < updateQuantityDTO.quantity) throw ResponseStatusException(
                 HttpStatus.FORBIDDEN,
                 "Not enough products!"
@@ -161,7 +187,7 @@ class WarehouseServiceImpl : WarehouseService {
             }
         }
 
-         return productWarehouse.toDTO()
+         return productWarehouseRepository.findById(compKey).get().toDTO()
     }
 
     override fun updateProductAlarmLevel(warehouseId: Long, productId: Long, newAlarmLevel: Long): ProductWarehouseDTO {
