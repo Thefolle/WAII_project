@@ -28,7 +28,7 @@ class GatewayApplication{
                 factory -> factory.configureDefault {
                 id -> Resilience4JConfigBuilder(id)
             .circuitBreakerConfig(CircuitBreakerConfig.ofDefaults())
-            .timeLimiterConfig(TimeLimiterConfig.custom().timeoutDuration(Duration.ofSeconds(3)).build()) //requests that takes more than 3 seconds will open the circuit
+            .timeLimiterConfig(TimeLimiterConfig.custom().timeoutDuration(Duration.ofSeconds(5)).build()) //requests that takes more than 5 seconds will open the circuit
             .build()
             }
         }
@@ -41,42 +41,75 @@ class GatewayApplication{
         return builder.routes()
             .route("Catalogue"){
                 it -> it.path("/catalogue/**") //end point esterno da rimappare
-                .filters { f -> f.circuitBreaker { it -> it.setFallbackUri("forward:/failure") } //circuit breaker to handle unavailability
+                .filters { f -> f.circuitBreaker { it -> it.setFallbackUri("forward:/failureCatalogue") } //circuit breaker to handle unavailability
                                 f.rewritePath("/catalogue", "/") }
                 .uri("lb://catalogue") //nome del service interno
             }
             .route("Orders"){
                 it -> it.path("/orders/**") //end point esterno da rimappare
-                .filters { f -> f.rewritePath("/orders", "/") }
+                .filters { f -> f.circuitBreaker { it -> it.setFallbackUri("forward:/failureOrder") } //circuit breaker to handle unavailability
+                    f.rewritePath("/orders", "/") }
                 .uri("lb://order") //nome del service interno
             }
             .route("Products"){
                     it -> it.path("/products/**") //end point esterno da rimappare
-                .filters { f -> f.rewritePath("/products", "/") }
+                .filters { f -> f.circuitBreaker { it -> it.setFallbackUri("forward:/failureWarehouse") } //circuit breaker to handle unavailability
+                    f.rewritePath("/products", "/") }
                 .uri("lb://warehouse") //nome del service interno
             }
             .route("Warehouses"){
                     it -> it.path("/warehouses/**") //end point esterno da rimappare
-                .filters { f -> f.rewritePath("/warehouses", "/") }
+                .filters { f -> f.circuitBreaker { it -> it.setFallbackUri("forward:/failureWarehouse") } //circuit breaker to handle unavailability
+                    f.rewritePath("/warehouses", "/") }
                 .uri("lb://warehouse") //nome del service interno
             }
             .route("Wallets"){
                     it -> it.path("/wallets/**") //end point esterno da rimappare
-                .filters { f -> f.circuitBreaker { it -> it.setFallbackUri("forward:/failure") } //circuit breaker to handle unavailability
+                .filters { f -> f.circuitBreaker { it -> it.setFallbackUri("forward:/failureWallet") } //circuit breaker to handle unavailability
                                 f.rewritePath("/wallets", "/") }
                 .uri("lb://wallet") //nome del service interno
             }
             .build()
     }
 
-    @GetMapping("/failure")
-    fun failureGet(): String {
-        return "We are sorry, the Service you are trying to reach is currently unavailable. Try again later!"
+    @GetMapping("/failureCatalogue")
+    fun failureCatalogueGet(): String {
+        return "We are sorry, the  Catalogue Service you are trying to reach is currently unavailable. Try again later!"
     }
 
-    @PostMapping("/failure")
-    fun failurePost(): String {
-        return "We are sorry, the Service you are trying to reach is currently unavailable. Try again later!"
+    @PostMapping("/failureCatalogue")
+    fun failureCataloguePost(): String {
+        return "We are sorry, the Catalogue Service you are trying to reach is currently unavailable. Try again later!"
+    }
+
+    @GetMapping("/failureOrder")
+    fun failureOrderGet(): String {
+        return "We are sorry, the Order Service you are trying to reach is currently unavailable. Try again later!"
+    }
+
+    @PostMapping("/failureOrder")
+    fun failureOrderPost(): String {
+        return "We are sorry, the Order Service you are trying to reach is currently unavailable. Try again later!"
+    }
+
+    @GetMapping("/failureWarehouse")
+    fun failureWarehouseGet(): String {
+        return "We are sorry, the Warehouse Service you are trying to reach is currently unavailable. Try again later!"
+    }
+
+    @PostMapping("/failureWarehouse")
+    fun failureWarehousePost(): String {
+        return "We are sorry, the Warehouse Service you are trying to reach is currently unavailable. Try again later!"
+    }
+
+    @GetMapping("/failureWallet")
+    fun failureWalletGet(): String {
+        return "We are sorry, the Wallet Service you are trying to reach is currently unavailable. Try again later!"
+    }
+
+    @PostMapping("/failureWallet")
+    fun failureWalletPost(): String {
+        return "We are sorry, the Wallet Service you are trying to reach is currently unavailable. Try again later!"
     }
 
 }

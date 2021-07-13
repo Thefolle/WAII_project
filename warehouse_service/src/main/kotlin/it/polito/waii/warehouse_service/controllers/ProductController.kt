@@ -54,6 +54,4 @@ class ProductController(val productServiceImpl: ProductServiceImpl) {
     fun getWarehouses(@PathVariable("productId") productId: Long) : ResponseEntity<List<WarehouseDto>> {
         return ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getWarehouses(productId))
     }
-
-
 }
