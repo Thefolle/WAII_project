@@ -15,5 +15,9 @@ class ProductWarehouse (
     @ManyToOne
     @MapsId("warehouseId")
     @JoinColumn
-    var warehouse: Warehouse
+    var warehouse: Warehouse,
+
+    var quantity: Long,
+    // alarm level is a threshold
+    var alarmLevel: Long
 )

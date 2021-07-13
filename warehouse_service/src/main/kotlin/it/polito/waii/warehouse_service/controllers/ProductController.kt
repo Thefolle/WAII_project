@@ -2,6 +2,7 @@ package it.polito.waii.warehouse_service.controllers
 
 import it.polito.waii.warehouse_service.dtos.PatchProductDTO
 import it.polito.waii.warehouse_service.dtos.ProductDTO
+import it.polito.waii.warehouse_service.dtos.WarehouseDto
 import it.polito.waii.warehouse_service.services.ProductServiceImpl
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -11,14 +12,20 @@ import java.net.URI
 @RestController
 class ProductController(val productServiceImpl: ProductServiceImpl) {
 
-    @GetMapping("/")
-    fun getProducts(): ResponseEntity<List<ProductDTO>> {
-        return  ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getProducts())
-    }
+//    @GetMapping("/")
+//    fun getProducts(): ResponseEntity<List<ProductDTO>> {
+//        return  ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getProducts())
+//    }
+//
+//    @GetMapping("/")
+//    fun getProductsPerCategory(@RequestParam("category") category: String): ResponseEntity<List<ProductDTO>> {
+//        return  ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getProductsPerCategory(category))
+//    }
 
     @GetMapping("/")
-    fun getProductsPerCategory(@RequestParam("category") category: String): ResponseEntity<List<ProductDTO>> {
-        return  ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getProductsPerCategory(category))
+    fun getProductsPerCategory(@RequestParam("category", required = false) category: String?): ResponseEntity<List<ProductDTO>> {
+        return if (category == null) ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getProducts())
+        else ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getProductsPerCategory(category))
     }
 
     @PostMapping("/")
@@ -53,7 +60,10 @@ class ProductController(val productServiceImpl: ProductServiceImpl) {
         return  ResponseEntity.status(HttpStatus.OK).body("Product picture updated succesfully!")
     }
 
-    //@GetMapping("/{productId}/warehouses")
-    //Todo: implement endpoint
+    @GetMapping("/{productId}/warehouses")
+    fun getWarehouses(@PathVariable("productId") productId: Long) : ResponseEntity<List<WarehouseDto>> {
+        return ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getWarehouses(productId))
+    }
+
 
 }

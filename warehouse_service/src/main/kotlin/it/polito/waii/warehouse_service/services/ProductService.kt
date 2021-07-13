@@ -2,6 +2,7 @@ package it.polito.waii.warehouse_service.services
 
 import it.polito.waii.warehouse_service.dtos.PatchProductDTO
 import it.polito.waii.warehouse_service.dtos.ProductDTO
+import it.polito.waii.warehouse_service.dtos.WarehouseDto
 import java.net.URI
 
 interface ProductService {
@@ -21,4 +22,6 @@ interface ProductService {
     fun getProductPicture(productId: Long): String
 
     fun updateProductPicture(productId: Long, pictureURI: String)
+
+    fun getWarehouses(productId: Long): List<WarehouseDto>
 }
