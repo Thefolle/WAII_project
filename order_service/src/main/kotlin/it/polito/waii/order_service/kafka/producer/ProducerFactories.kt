@@ -2,6 +2,7 @@ package it.polito.waii.order_service.kafka.producer
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import it.polito.waii.order_service.dtos.OrderDto
+import it.polito.waii.order_service.dtos.PatchOrderDto
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.LongSerializer
 import org.apache.kafka.common.serialization.StringSerializer
@@ -17,6 +18,17 @@ class ProducerFactories {
 
     @Bean
     fun orderDtoProducerFactory(): ProducerFactory<String, OrderDto> {
+        var config = mapOf(
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
+        )
+
+        return DefaultKafkaProducerFactory(config)
+    }
+
+    @Bean
+    fun patchOrderDtoProducerFactory(): ProducerFactory<String, PatchOrderDto> {
         var config = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,

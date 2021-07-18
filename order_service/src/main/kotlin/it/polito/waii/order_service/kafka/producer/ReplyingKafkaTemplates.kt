@@ -1,6 +1,7 @@
 package it.polito.waii.order_service.kafka.producer
 
 import it.polito.waii.order_service.dtos.OrderDto
+import it.polito.waii.order_service.dtos.PatchOrderDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -33,7 +34,7 @@ class ReplyingKafkaTemplates {
     }
 
     @Bean
-    fun orderDtoVoidReplyingKafkaTemplate(producerFactory: ProducerFactory<String, OrderDto>, container: ConcurrentMessageListenerContainer<String, Void>): ReplyingKafkaTemplate<String, OrderDto, Void> {
+    fun patchOrderDtoVoidReplyingKafkaTemplate(producerFactory: ProducerFactory<String, PatchOrderDto>, container: ConcurrentMessageListenerContainer<String, Void>): ReplyingKafkaTemplate<String, PatchOrderDto, Void> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
         return replyingKafkaTemplate

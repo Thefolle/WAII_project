@@ -8,31 +8,60 @@ import reactor.core.publisher.Mono
 
 interface OrderRepository: ReactiveNeo4jRepository<Order, Long> {
 
+    // Cannot infer a general query named deleteIfIsolated, regardless of the type of the node,
+    // because id is a local property of the node, unlike the internal auto-generated id
     @Query(
-        "match (o:Order) where id(o)=\$id\n" +
-                "match (o)-[:PRODUCTS]->(products:Product)\n" +
+        "match (w:Warehouse {id: \$id})\n" +
+                "where not (w)-[]-()\n" +
+                "delete w"
+    )
+    fun deleteWarehouseIfIsolated(@Param("id") id: Long): Mono<Void>
+
+    @Query(
+        "match (d {id: \$deliveryId})-[r]-(w:Warehouse {id: \$warehouseId})\n" +
+                "delete r"
+    )
+    fun detachWarehouse(@Param("deliveryId") deliveryId: Long, @Param("warehouseId") warehouseId: Long): Mono<Void>
+
+    @Query(
+        "match (p:Product {id: \$id})\n" +
+                "where not (p)-[]-()\n" +
+                "delete p"
+    )
+    fun deleteProductIfIsolated(@Param("id") id: Long): Mono<Void>
+
+    @Query(
+        "match (d {id: \$deliveryId})-[r]-(p:Product {id: \$productId})\n" +
+                "delete r"
+    )
+    fun detachProduct(@Param("deliveryId") deliveryId: Long, @Param("productId") productId: Long): Mono<Void>
+
+
+    @Query(
+        "match (o:Order {id: \$id})\n" +
                 "match (o)-[:BUYER]->(customer:Customer)\n" +
-                "match (o)-[:DELIVERIES]->(deliveries:Delivery)-[:WAREHOUSE]->(warehouses:Warehouse)\n" +
-                "detach delete o, deliveries\n" +
+                "match (o)-[:DELIVERIES]->(delivery:Delivery)-[:WAREHOUSE]->(warehouse:Warehouse)\n" +
+                "match (delivery)-[:PRODUCT]->(product:Product)\n" +
+                "detach delete o, delivery\n" +
                 "\n" +
-                "with products, customer, warehouses\n" +
+                "with product, customer, warehouse\n" +
                 "\n" +
-                "// delete products if they have just become isolated nodes\n" +
-                "match (products)\n" +
-                "where not (products)<-[:PRODUCTS]-()\n" +
-                "delete products\n" +
+                "// delete product if they have just become isolated nodes\n" +
+                "match (product)\n" +
+                "where not (product)-[]-()\n" +
+                "delete product\n" +
                 "\n" +
-                "with customer, warehouses\n" +
+                "with customer, warehouse\n" +
                 "\n" +
                 "match (customer)\n" +
-                "where not (customer)<-[:BUYER]-()\n" +
+                "where not (customer)-[]-()\n" +
                 "delete customer\n" +
                 "\n" +
-                "with warehouses\n" +
+                "with warehouse\n" +
                 "\n" +
-                "match (warehouses)\n" +
-                "where not (warehouses)<-[:WAREHOUSE]-()\n" +
-                "delete warehouses"
+                "match (warehouse)\n" +
+                "where not (warehouse)-[]-()\n" +
+                "delete warehouse"
     )
     override fun deleteById(@Param("id") id: Long): Mono<Void>
 

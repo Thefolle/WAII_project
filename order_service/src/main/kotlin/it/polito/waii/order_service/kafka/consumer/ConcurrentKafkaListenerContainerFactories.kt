@@ -1,6 +1,7 @@
 package it.polito.waii.order_service.kafka.consumer
 
 import it.polito.waii.order_service.dtos.OrderDto
+import it.polito.waii.order_service.dtos.PatchOrderDto
 import org.apache.kafka.common.errors.SerializationException
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
@@ -13,7 +14,7 @@ import org.springframework.kafka.listener.SeekToCurrentBatchErrorHandler
 import org.springframework.retry.support.RetryTemplate
 import org.springframework.retry.support.RetryTemplateBuilder
 
-@Configuration
+@Configuration("consumerConcurrentKafkaListenerContainerFactories")
 class ConcurrentKafkaListenerContainerFactories {
 
     @Bean
@@ -44,8 +45,8 @@ class ConcurrentKafkaListenerContainerFactories {
     }
 
     @Bean
-    fun updateOrderConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, OrderDto>, @Qualifier("voidKafkaTemplate") replyTemplate: KafkaTemplate<String, Void>): ConcurrentKafkaListenerContainerFactory<String, OrderDto> {
-        var container = ConcurrentKafkaListenerContainerFactory<String, OrderDto>()
+    fun updateOrderConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, PatchOrderDto>, @Qualifier("voidKafkaTemplate") replyTemplate: KafkaTemplate<String, Void>): ConcurrentKafkaListenerContainerFactory<String, PatchOrderDto> {
+        var container = ConcurrentKafkaListenerContainerFactory<String, PatchOrderDto>()
         container.consumerFactory = consumerFactory
         container.setReplyTemplate(replyTemplate)
 

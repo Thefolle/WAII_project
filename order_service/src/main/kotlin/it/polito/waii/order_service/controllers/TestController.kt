@@ -3,6 +3,7 @@ package it.polito.waii.order_service.controllers
 import com.fasterxml.jackson.databind.ObjectMapper
 import it.polito.waii.order_service.dtos.DeliveryDto
 import it.polito.waii.order_service.dtos.OrderDto
+import it.polito.waii.order_service.dtos.PatchOrderDto
 import it.polito.waii.order_service.entities.OrderStatus
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.ParameterizedTypeReference
@@ -30,7 +31,7 @@ class TestController {
     lateinit var stringLongOrderDtoReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Long, OrderDto>
 
     @Autowired
-    lateinit var stringOrderDtoVoidReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDto, Void>
+    lateinit var stringPatchOrderDtoVoidReplyingKafkaTemplate: ReplyingKafkaTemplate<String, PatchOrderDto, Void>
 
     @Autowired
     lateinit var stringLongVoidReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Long, Void>
@@ -49,9 +50,14 @@ class TestController {
                         OrderDto(
                             null,
                             2,
-                            setOf(3, 5),
-                            setOf(DeliveryDto("Paseo de Gracia, 56", 0)),
-                            OrderStatus.CANCELED
+                            mapOf(
+                                0L to DeliveryDto(null, "Paseo de Gracia, 56", 0)
+                            ),
+                            mapOf(
+                                0L to 2
+                            ),
+                            3.5f,
+                            null
                         )
                     )
                     .setHeader(KafkaHeaders.TOPIC, "order_service_requests")
@@ -130,9 +136,9 @@ class TestController {
     }
 
     @PatchMapping("/{id}", consumes = [MediaType.APPLICATION_JSON_VALUE])
-    fun updateOrder(@PathVariable("id") id: Long, @RequestBody orderDto: OrderDto) {
+    fun updateOrder(@PathVariable("id") id: Long, @RequestBody orderDto: PatchOrderDto) {
 
-        stringOrderDtoVoidReplyingKafkaTemplate
+        stringPatchOrderDtoVoidReplyingKafkaTemplate
             .send(MessageBuilder
                 .withPayload(
                     orderDto

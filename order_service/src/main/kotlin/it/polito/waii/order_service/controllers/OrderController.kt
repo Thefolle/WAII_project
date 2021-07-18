@@ -1,7 +1,9 @@
 package it.polito.waii.order_service.controllers
 
 import it.polito.waii.order_service.dtos.OrderDto
+import it.polito.waii.order_service.dtos.PatchOrderDto
 import it.polito.waii.order_service.services.OrderService
+import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.annotation.TopicPartition
@@ -77,10 +79,11 @@ class OrderController {
         containerFactory = "updateOrderConcurrentKafkaListenerContainerFactory",
         topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["3"])]
     )
-    fun updateOrder(orderDto: OrderDto) {
-        orderService
-            .updateOrder(orderDto)
-            .block()
+    fun updateOrder(orderDto: PatchOrderDto) {
+        runBlocking {
+            orderService
+                .updateOrder(orderDto)
+        }
     }
 
     @KafkaListener(

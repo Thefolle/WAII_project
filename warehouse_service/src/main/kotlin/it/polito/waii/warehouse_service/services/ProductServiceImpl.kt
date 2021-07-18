@@ -35,7 +35,8 @@ class ProductServiceImpl(
             category = product.category,
             creationDate = LocalDateTime.now(),
             price = product.price,
-            avgRating = 0F
+            avgRating = 0F,
+            pictureURI = product.pictureURI
         )
         productRepository.save(newProduct)
         return newProduct.toDTO()

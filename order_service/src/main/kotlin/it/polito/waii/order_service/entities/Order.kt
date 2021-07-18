@@ -1,6 +1,7 @@
 package it.polito.waii.order_service.entities
 
 import it.polito.waii.order_service.dtos.OrderDto
+import org.springframework.data.annotation.Version
 import org.springframework.data.neo4j.core.schema.GeneratedValue
 import org.springframework.data.neo4j.core.schema.Id
 import org.springframework.data.neo4j.core.schema.Node
@@ -9,18 +10,44 @@ import org.springframework.data.neo4j.core.schema.Relationship
 @Node
 data class Order(
     @Id
-    @GeneratedValue
     val id: Long?,
-    val buyer: Customer,
-    val products: Set<Product>,
+    var buyer: Customer,
+    val deliveries: Set<Delivery>,
+    var total: Float,
     val status: OrderStatus,
-    val deliveries: Set<Delivery>
 ) {
+
+
     fun toDto(): OrderDto = OrderDto(
         id,
         buyer.id!!,
-        products.map { it.id!! }.toSet(),
-        deliveries.map { it.toDto() }.toSet(),
+        deliveries.associate { it.product.id!! to it.toDto() },
+        deliveries.associate { it.product.id!! to it.quantity },
+        total,
         status
+    )
+
+    fun withBuyer(buyer: Customer) : Order = Order(
+        this.id,
+        buyer,
+        this.deliveries,
+        this.total,
+        this.status
+    )
+
+    fun withDeliveries(deliveries: Set<Delivery>) : Order = Order(
+        this.id,
+        this.buyer,
+        deliveries,
+        this.total,
+        this.status
+    )
+
+    fun withTotal(total: Float) : Order = Order(
+        this.id,
+        this.buyer,
+        this.deliveries,
+        total,
+        this.status
     )
 }
