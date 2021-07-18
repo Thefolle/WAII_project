@@ -1,10 +1,12 @@
 package it.polito.waii.warehouse_service.controllers
 
-import it.polito.waii.warehouse_service.dtos.PartialWarehouseDto
-import it.polito.waii.warehouse_service.dtos.WarehouseDto
+import it.polito.waii.warehouse_service.dtos.*
 import it.polito.waii.warehouse_service.services.WarehouseService
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 
 @RestController
 class WarehouseController {
@@ -46,6 +48,34 @@ class WarehouseController {
     fun deleteWarehouse(@PathVariable("id") id: Long) {
         warehouseService
             .deleteWarehouse(id)
+    }
+
+    @GetMapping("/{id}/quantity/{productId}")
+    fun getProductQuantity(@PathVariable("id") warehouseId: Long, @PathVariable("productId") productId: Long): ResponseEntity<Long> {
+        return ResponseEntity.status(HttpStatus.OK).body(warehouseService.getProductQuantity(warehouseId,productId))
+    }
+
+    @GetMapping("/{id}/quantity")
+    fun getAllQuantities(@PathVariable("id") warehouseId: Long): ResponseEntity<List<ProductQuantityDTO>> {
+        return ResponseEntity.status(HttpStatus.OK).body(warehouseService.getAllQuantities(warehouseId))
+    }
+
+    @PutMapping("/{id}/quantity")
+    fun updateProductQuantity(@PathVariable("id") warehouseId: Long, @RequestBody updateQuantityDTO: UpdateQuantityDTO): ResponseEntity<ProductWarehouseDTO> {
+        if (updateQuantityDTO.quantity < 0) throw ResponseStatusException(
+            HttpStatus.FORBIDDEN,
+            "Quantity should be positive!"
+        )
+        return ResponseEntity.status(HttpStatus.OK).body(warehouseService.updateProductQuantity(warehouseId, updateQuantityDTO))
+    }
+
+    @PutMapping("/{id}/alarm/{productId}")
+    fun updateProductAlarmLevel(@PathVariable("id") warehouseId: Long, @PathVariable("productId") productId: Long, @RequestBody newAlarmLevel: Long): ResponseEntity<ProductWarehouseDTO> {
+        if (newAlarmLevel < 0) throw ResponseStatusException(
+            HttpStatus.FORBIDDEN,
+            "Alarm level cannot be negative!"
+        )
+        return ResponseEntity.status(HttpStatus.OK).body(warehouseService.updateProductAlarmLevel(warehouseId, productId, newAlarmLevel))
     }
 
 }

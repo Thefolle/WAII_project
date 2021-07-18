@@ -9,6 +9,7 @@ import org.neo4j.driver.Driver
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 import org.springframework.context.annotation.Bean
 import org.springframework.data.neo4j.core.ReactiveDatabaseSelectionProvider
 import org.springframework.data.neo4j.core.transaction.ReactiveNeo4jTransactionManager
@@ -26,6 +27,7 @@ import org.springframework.kafka.support.serializer.JsonSerializer
 
 
 @SpringBootApplication
+@EnableEurekaClient
 class OrderServiceApplication {
 
     // configure this bean since Spring Boot doesn't autoconfigure it automatically yet

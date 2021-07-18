@@ -1,7 +1,6 @@
 package it.polito.waii.warehouse_service.services
 
-import it.polito.waii.warehouse_service.dtos.PartialWarehouseDto
-import it.polito.waii.warehouse_service.dtos.WarehouseDto
+import it.polito.waii.warehouse_service.dtos.*
 
 interface WarehouseService {
 
@@ -11,5 +10,9 @@ interface WarehouseService {
     fun updateWarehouse(id: Long, warehouseDto: WarehouseDto): Long?
     fun updateWarehouse(id: Long, warehouseDto: PartialWarehouseDto)
     fun deleteWarehouse(id: Long)
+    fun getProductQuantity(warehouseId: Long, productId: Long): Long
+    fun getAllQuantities(warehouseId: Long): List<ProductQuantityDTO>
+    fun updateProductQuantity(warehouseId: Long, updateQuantityDTO: UpdateQuantityDTO): ProductWarehouseDTO
+    fun updateProductAlarmLevel(warehouseId: Long, productId: Long, newAlarmLevel: Long): ProductWarehouseDTO
 
 }
