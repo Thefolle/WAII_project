@@ -6,6 +6,7 @@ import it.polito.waii.order_service.dtos.OrderDto
 import it.polito.waii.order_service.dtos.PatchOrderDto
 import it.polito.waii.order_service.entities.OrderStatus
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
@@ -25,6 +26,7 @@ class TestController {
     lateinit var stringVoidSetOrderDtoReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Void, Set<OrderDto>>
 
     @Autowired
+    @Qualifier("orderDtoLongReplyingKafkaTemplate")
     lateinit var stringOrderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDto, Long>
 
     @Autowired
@@ -50,6 +52,7 @@ class TestController {
                         OrderDto(
                             null,
                             2,
+                            0,
                             mapOf(
                                 0L to DeliveryDto(null, "Paseo de Gracia, 56", 0)
                             ),

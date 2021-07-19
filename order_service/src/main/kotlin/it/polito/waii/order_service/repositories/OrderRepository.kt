@@ -36,6 +36,32 @@ interface OrderRepository: ReactiveNeo4jRepository<Order, Long> {
     )
     fun detachProduct(@Param("deliveryId") deliveryId: Long, @Param("productId") productId: Long): Mono<Void>
 
+    @Query(
+        "match (c:Customer {id: \$id})\n" +
+                "where not (p)-[]-()\n" +
+                "delete c"
+    )
+    fun deleteCustomerIfIsolated(@Param("id") id: Long): Mono<Void>
+
+    @Query(
+        "match (d {id: \$deliveryId})-[r]-(c:Customer {id: \$customerId})\n" +
+                "delete r"
+    )
+    fun detachCustomer(@Param("deliveryId") deliveryId: Long, @Param("customerId") customerId: Long): Mono<Void>
+
+    @Query(
+        "match (w:Wallet {id: \$id})\n" +
+                "where not (p)-[]-()\n" +
+                "delete w"
+    )
+    fun deleteWalletIfIsolated(@Param("id") id: Long): Mono<Void>
+
+    @Query(
+        "match (d {id: \$deliveryId})-[r]-(w:Wallet {id: \$walletId})\n" +
+                "delete r"
+    )
+    fun detachWallet(@Param("deliveryId") deliveryId: Long, @Param("walletId") walletId: Long): Mono<Void>
+
 
     @Query(
         "match (o:Order {id: \$id})\n" +

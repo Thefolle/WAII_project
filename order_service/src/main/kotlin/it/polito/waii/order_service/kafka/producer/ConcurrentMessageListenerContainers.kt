@@ -40,6 +40,24 @@ class ConcurrentMessageListenerContainers {
     }
 
     @Bean
+    fun long2ConcurrentMessageListenerContainer(@Qualifier("longConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, Long>): ConcurrentMessageListenerContainer<String, Long> {
+        var container = containerFactory.createContainer("orchestrator_responses")
+        container.containerProperties.setGroupId("outer_service_group_id")
+
+        // this error handler is called when a listener receives a message from the shared reply topic that
+        // is directed to another handler; the topic is just discarded by passing to the next message
+        val consumerAwareBatchErrorHandler = ConsumerAwareBatchErrorHandler { thrownException, data, consumer ->
+            if (thrownException is SerializationException) {
+                consumer.seek(TopicPartition("orchestrator_responses", 0), consumer.position(TopicPartition("orchestrator_responses", 0)) + 1)
+            }
+        }
+        container.setBatchErrorHandler(consumerAwareBatchErrorHandler)
+
+
+        return container
+    }
+
+    @Bean
     fun setOrderDtoConcurrentMessageListenerContainer(@Qualifier("setOrderDtoConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, Set<OrderDto>>): ConcurrentMessageListenerContainer<String, Set<OrderDto>> {
         var container = containerFactory.createContainer("order_service_responses")
         container.containerProperties.setGroupId("outer_service_group_id_2")

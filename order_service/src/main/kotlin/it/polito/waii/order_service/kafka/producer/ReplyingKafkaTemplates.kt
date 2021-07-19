@@ -13,7 +13,14 @@ import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 class ReplyingKafkaTemplates {
 
     @Bean
-    fun orderDtoLongReplyingKafkaTemplate(producerFactory: ProducerFactory<String, OrderDto>, container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, OrderDto, Long> {
+    fun orderDtoLongReplyingKafkaTemplate(producerFactory: ProducerFactory<String, OrderDto>, @Qualifier("longConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, OrderDto, Long> {
+        val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
+        replyingKafkaTemplate.setSharedReplyTopic(true)
+        return replyingKafkaTemplate
+    }
+
+    @Bean
+    fun orderDtoLong2ReplyingKafkaTemplate(producerFactory: ProducerFactory<String, OrderDto>, @Qualifier("long2ConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, OrderDto, Long> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
         return replyingKafkaTemplate

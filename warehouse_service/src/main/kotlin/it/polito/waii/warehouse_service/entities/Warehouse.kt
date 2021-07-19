@@ -14,7 +14,6 @@ class Warehouse(
     var name: String,
     var city: String,
     var region: String,
-    // expressed in m^3
     var capacity: Long,
     // current availability is computed on the fly
 
