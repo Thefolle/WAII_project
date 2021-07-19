@@ -104,7 +104,6 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
 
     override fun createWallet(): WalletDTO {
         val username = getUsername()
-        if (!walletRepository.findByOwnerUsername(username).isEmpty) throw ResponseStatusException(HttpStatus.FORBIDDEN, "This user already has a wallet!")
         val wallet  = Wallet(null, username, 0.0F)
         walletRepository.save(wallet)
         return wallet.toDTO()
