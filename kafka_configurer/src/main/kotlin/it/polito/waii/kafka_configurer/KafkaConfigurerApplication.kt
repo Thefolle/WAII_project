@@ -18,6 +18,16 @@ class KafkaConfigurerApplication {
         return NewTopic("order_service_responses", 1, 1)
     }
 
+    @Bean
+    fun orchestratorRequestsTopic(): NewTopic {
+        return NewTopic("orchestrator_requests", 1, 1)
+    }
+
+    @Bean
+    fun orchestratorResponsesTopic(): NewTopic {
+        return NewTopic("orchestrator_responses", 1, 1)
+    }
+
 }
 
 fun main(args: Array<String>) {

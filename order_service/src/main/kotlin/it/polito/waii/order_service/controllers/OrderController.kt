@@ -20,7 +20,6 @@ class OrderController {
 
     // Methods are incomplete for two reasons:
     // - no communication with the other services
-    // - the return value must be provided by sending another message to the caller
 
     /* Design
 

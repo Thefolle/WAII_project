@@ -1,13 +1,11 @@
-package it.polito.waii.order_service.dtos
-
-import it.polito.waii.order_service.entities.OrderStatus
+package it.polito.waii.orchestrator.dtos
 
 /**
  * The product ids correspond to the key list of the deliveries field and the quantities field
-  */
+ */
 
 
-class OrderDto(
+class OrderDtoOrchestrator(
     val id: Long? = null,
     val buyerId: Long,
     val walletId: Long,

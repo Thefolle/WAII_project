@@ -12,6 +12,7 @@ data class Order(
     @Id
     val id: Long?,
     var buyer: Customer,
+    val wallet: Wallet,
     val deliveries: Set<Delivery>,
     var total: Float,
     val status: OrderStatus,
@@ -21,6 +22,7 @@ data class Order(
     fun toDto(): OrderDto = OrderDto(
         id,
         buyer.id!!,
+        wallet.id!!,
         deliveries.associate { it.product.id!! to it.toDto() },
         deliveries.associate { it.product.id!! to it.quantity },
         total,
@@ -30,6 +32,7 @@ data class Order(
     fun withBuyer(buyer: Customer) : Order = Order(
         this.id,
         buyer,
+        this.wallet,
         this.deliveries,
         this.total,
         this.status
@@ -38,6 +41,7 @@ data class Order(
     fun withDeliveries(deliveries: Set<Delivery>) : Order = Order(
         this.id,
         this.buyer,
+        this.wallet,
         deliveries,
         this.total,
         this.status
@@ -46,6 +50,7 @@ data class Order(
     fun withTotal(total: Float) : Order = Order(
         this.id,
         this.buyer,
+        this.wallet,
         this.deliveries,
         total,
         this.status
