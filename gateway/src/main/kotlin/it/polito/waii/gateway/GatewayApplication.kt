@@ -54,7 +54,7 @@ class GatewayApplication{
             .route("Products"){
                     it -> it.path("/products/**") //end point esterno da rimappare
                 .filters { f -> f.circuitBreaker { it -> it.setFallbackUri("forward:/failureWarehouse") } //circuit breaker to handle unavailability
-                    f.rewritePath("/products", "/") }
+                    f.rewritePath("/products", "/products") }
                 .uri("lb://warehouse") //nome del service interno
             }
             .route("Warehouses"){
