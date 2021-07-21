@@ -1,13 +1,18 @@
 package it.polito.waii.order_service.kafka.producer
 
 import it.polito.waii.order_service.dtos.OrderDto
+import it.polito.waii.order_service.exceptions.UnsatisfiableRequestException
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.SerializationException
+import org.apache.kafka.common.errors.TimeoutException
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry
 import org.springframework.kafka.listener.*
+import org.springframework.kafka.requestreply.KafkaReplyTimeoutException
 import org.springframework.kafka.retrytopic.DeadLetterPublishingRecovererFactory
 import org.springframework.util.backoff.FixedBackOff
 

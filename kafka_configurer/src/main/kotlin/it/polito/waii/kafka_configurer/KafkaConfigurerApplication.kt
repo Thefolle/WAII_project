@@ -28,6 +28,16 @@ class KafkaConfigurerApplication {
         return NewTopic("orchestrator_responses", 1, 1)
     }
 
+    @Bean
+    fun warehouseServiceRequestsTopic(): NewTopic {
+        return NewTopic("warehouse_service_requests", 1, 1)
+    }
+
+    @Bean
+    fun exceptionsTopic(): NewTopic {
+        return NewTopic("exceptions", 1, 1)
+    }
+
 }
 
 fun main(args: Array<String>) {

@@ -10,10 +10,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
+import org.apache.kafka.common.errors.TimeoutException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.kafka.requestreply.KafkaReplyTimeoutException
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.messaging.support.MessageBuilder
@@ -25,7 +27,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
 @Service
-class OrderServiceImpl: OrderService {
+class OrderServiceImpl : OrderService {
 
     @Autowired
     lateinit var orderRepository: OrderRepository
@@ -44,7 +46,7 @@ class OrderServiceImpl: OrderService {
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
         correlationId.putInt(0)
 
-         val future = orderDtoLongReplyingKafkaTemplate
+        val future = orderDtoLongReplyingKafkaTemplate
             .sendAndReceive(
                 MessageBuilder
                     .withPayload(
@@ -57,11 +59,15 @@ class OrderServiceImpl: OrderService {
                         KafkaHeaders.REPLY_TOPIC,
                         "orchestrator_responses".toByteArray(Charset.defaultCharset())
                     )
+
                     .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
                     .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
                     .build(),
                 ParameterizedTypeReference.forType<Long>(Long::class.java)
             )
+        val futureResult = future.get().payload
+
+
 
         val customer = Customer(orderDto.buyerId)
         val wallet = Wallet(orderDto.walletId)
@@ -77,8 +83,7 @@ class OrderServiceImpl: OrderService {
         }
             .toSet()
 
-        val futureResult = future.get().payload
-        if (futureResult == 1L) throw UnsatisfiableRequestException("The warehouse is full")
+//        if (futureResult == 1L) throw UnsatisfiableRequestException("The warehouse is full")
 
         return orderRepository
             .save(Order(i++, customer, wallet, deliveries, orderDto.total, OrderStatus.ISSUED))

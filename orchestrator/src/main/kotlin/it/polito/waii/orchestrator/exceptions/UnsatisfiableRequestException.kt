@@ -1,4 +1,4 @@
-package it.polito.waii.order_service.exceptions
+package it.polito.waii.orchestrator.exceptions
 
 import java.lang.RuntimeException
 

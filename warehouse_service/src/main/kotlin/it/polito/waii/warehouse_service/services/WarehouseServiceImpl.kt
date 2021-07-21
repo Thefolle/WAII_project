@@ -17,7 +17,11 @@ class WarehouseServiceImpl : WarehouseService {
 
     @Autowired
     lateinit var warehouseRepository: WarehouseRepository
+
+    @Autowired
     lateinit var productRepository: ProductRepository
+
+    @Autowired
     lateinit var productWarehouseRepository: ProductWarehouseRepository
 
 

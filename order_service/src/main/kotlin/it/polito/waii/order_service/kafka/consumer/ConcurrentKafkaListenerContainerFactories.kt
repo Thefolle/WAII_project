@@ -62,4 +62,12 @@ class ConcurrentKafkaListenerContainerFactories {
         return container
     }
 
+    @Bean
+    fun exceptionsConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, String>): ConcurrentKafkaListenerContainerFactory<String, String> {
+        var container = ConcurrentKafkaListenerContainerFactory<String, String>()
+        container.consumerFactory = consumerFactory
+
+        return container
+    }
+
 }
