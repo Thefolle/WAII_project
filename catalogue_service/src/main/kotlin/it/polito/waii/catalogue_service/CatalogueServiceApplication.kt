@@ -1,6 +1,9 @@
 package it.polito.waii.catalogue_service
 
+import it.polito.waii.catalogue_service.entities.User
+import it.polito.waii.catalogue_service.repositories.UserRepository
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient
@@ -11,6 +14,7 @@ import org.springframework.security.core.AuthenticationException
 import org.springframework.security.crypto.factory.PasswordEncoderFactories
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.AuthenticationEntryPoint
+import java.time.LocalDateTime
 import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
@@ -56,6 +60,31 @@ class CatalogueServiceApplication{
     fun getAuthenticationEntryPoint(): AuthenticationEntryPoint {
         return AuthenticationEntryPoint() { httpServletRequest: HttpServletRequest, httpServletResponse: HttpServletResponse, authenticationException: AuthenticationException ->
             httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")
+        }
+    }
+
+    @Bean
+    fun populateDB (userRepository: UserRepository): ApplicationRunner {
+        return ApplicationRunner {
+
+            val password = passwordEncoder().encode("123456")
+
+            // Create new users
+            val u1 = User(
+                null, "Sofia", password,
+                "Sofiya", "Reyes",
+                "sofiya@email.com", "via Garibaldi 9",
+                true, true, true
+            )
+            userRepository.save(u1)
+
+            val u2 = User(
+                null, "Lucas", password,
+                "Luca", "Bernardi",
+                "lucas@email.com", "via Veneto 19",
+                true, false, true
+            )
+            userRepository.save(u2)
         }
     }
 }
