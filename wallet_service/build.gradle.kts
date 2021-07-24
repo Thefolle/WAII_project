@@ -33,6 +33,7 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
+    implementation("org.springframework.kafka:spring-kafka")
 }
 
 dependencyManagement {

@@ -34,6 +34,21 @@ class KafkaConfigurerApplication {
     }
 
     @Bean
+    fun warehouseServiceResponsesTopic(): NewTopic {
+        return NewTopic("warehouse_service_responses", 1, 1)
+    }
+
+    @Bean
+    fun walletServiceRequestsTopic(): NewTopic {
+        return NewTopic("wallet_service_requests", 1, 1)
+    }
+
+    @Bean
+    fun walletServiceResponsesTopic(): NewTopic {
+        return NewTopic("wallet_service_responses", 1, 1)
+    }
+
+    @Bean
     fun exceptionsTopic(): NewTopic {
         return NewTopic("exceptions", 1, 1)
     }
