@@ -85,6 +85,14 @@ class CatalogueServiceApplication{
                 true, false, true
             )
             userRepository.save(u2)
+
+            val u3 = User(
+                null, "Josef", password,
+                "Josef", "Baldi",
+                "baldi@email.com", "corso Robbia 37",
+                true, false, true
+            )
+            userRepository.save(u3)
         }
     }
 }
