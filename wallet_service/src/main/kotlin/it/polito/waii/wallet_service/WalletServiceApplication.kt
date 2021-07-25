@@ -46,20 +46,25 @@ class WalletServiceApplication{
             // User Sofia has 2 wallets
             val w1 = Wallet(null, "Sofia",50F)
             walletRepository.save(w1)
-            val w2 = Wallet(null, "Sofia", 17F)
+            val w2 = Wallet(null, "Lucas", 17F)
             walletRepository.save(w2)
-            val w3 = Wallet(null, "Luca", 31F)
+            val w3 = Wallet(null, "Josef", 31F)
             walletRepository.save(w3)
 
             // Make transactions
             // do charge
             val t1 = Transaction(null, w1, 3F, LocalDateTime.now(), false, 1, null)
             transactionRepository.save(t1)
+
+            val t2 = Transaction(null, w2, 70F, LocalDateTime.now(), false, 3, null)
+            transactionRepository.save(t2)
+
             // do recharge
             val r1 = Recharge(null, 5F, LocalDateTime.now())
             rechargeRepository.save(r1)
-            val t2 = Transaction(null, w3, 5F, LocalDateTime.now(), true, 2, r1)
-            transactionRepository.save(t2)
+            val t3 = Transaction(null, w3, 5F, LocalDateTime.now(), true, 2, r1)
+            transactionRepository.save(t3)
+
 
         }
     }
