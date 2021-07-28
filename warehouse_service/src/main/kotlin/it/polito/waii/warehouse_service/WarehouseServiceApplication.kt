@@ -3,7 +3,10 @@ package it.polito.waii.warehouse_service
 import it.polito.waii.warehouse_service.dtos.ProductDTO
 import it.polito.waii.warehouse_service.dtos.UpdateQuantityDTO
 import it.polito.waii.warehouse_service.dtos.WarehouseDto
-import it.polito.waii.warehouse_service.entities.Action
+import it.polito.waii.warehouse_service.entities.*
+import it.polito.waii.warehouse_service.repositories.ProductRepository
+import it.polito.waii.warehouse_service.repositories.ProductWarehouseRepository
+import it.polito.waii.warehouse_service.repositories.WarehouseRepository
 import it.polito.waii.warehouse_service.services.ProductService
 import it.polito.waii.warehouse_service.services.WarehouseService
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.AuthenticationEntryPoint
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+
 
 @SpringBootApplication
 @EnableEurekaClient
@@ -79,6 +83,39 @@ class WarehouseServiceApplication {
     fun getAuthenticationEntryPoint(): AuthenticationEntryPoint {
         return AuthenticationEntryPoint() { httpServletRequest: HttpServletRequest, httpServletResponse: HttpServletResponse, authenticationException: AuthenticationException ->
             httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")
+        }
+    }
+
+    @Bean
+    fun populateDB (warehouseRepository: WarehouseRepository,
+                    productRepository: ProductRepository,
+                    productWarehouseRepository: ProductWarehouseRepository): ApplicationRunner{
+        return ApplicationRunner {
+            // Create warehouse
+            val w1 = Warehouse(null, "Food","Firenze", "Toscana",
+                                100, null)
+            warehouseRepository.save(w1)
+
+            // Add products
+            var p1 = Product(null, "melon", "origin Sicily", "fruit",
+                                LocalDateTime.now(), 3F, 2.1F,
+                                null,null, null)
+            productRepository.save(p1)
+
+            val p2 = Product(null, "apple", "origin Sicily", "fruit",
+                                LocalDateTime.now(), 2F, 3.5F,
+                                null,null, null)
+            productRepository.save(p2)
+
+            // make comment
+            val c1 = mutableSetOf<Comment>(Comment(null, "About Melon",
+                                                        "Juicy", 4,
+                                                    LocalDateTime.now(), p1))
+
+            p1.comments = c1
+            productRepository.save(p1)
+
+
         }
     }
 
