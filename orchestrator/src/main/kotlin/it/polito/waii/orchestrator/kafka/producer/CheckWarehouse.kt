@@ -41,6 +41,17 @@ class CheckWarehouse {
     }
 
     @Bean
+    fun checkWarehouseExceptionProducerFactory(): ProducerFactory<String, Any> {
+        var config = mapOf(
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
+        )
+
+        return DefaultKafkaProducerFactory(config)
+    }
+
+    @Bean
     fun checkWarehouseKafkaTemplate(producerFactory: ProducerFactory<String, TransactionDto>): KafkaTemplate<String, TransactionDto> {
         return KafkaTemplate(producerFactory)
     }
@@ -67,7 +78,7 @@ class CheckWarehouse {
     }
 
     @Bean
-    fun checkWarehouseExceptionKafkaTemplate(producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {
+    fun checkWarehouseExceptionKafkaTemplate(@Qualifier("checkWarehouseExceptionProducerFactory") producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {
         return KafkaTemplate(producerFactory)
     }
 

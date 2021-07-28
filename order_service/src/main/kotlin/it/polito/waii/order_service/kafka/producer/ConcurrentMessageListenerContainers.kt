@@ -58,7 +58,6 @@ class ConcurrentMessageListenerContainers {
         }
         container.setBatchErrorHandler(consumerAwareBatchErrorHandler)
 
-
         return container
     }
 

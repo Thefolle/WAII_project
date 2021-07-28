@@ -9,7 +9,7 @@ import org.springframework.kafka.support.converter.StringJsonMessageConverter
 class KafkaMessageConverters {
 
     @Bean
-    fun stringJsonMessageConverter(): MessageConverter {
+    fun stringJsonMessageConverter(): StringJsonMessageConverter {
         return StringJsonMessageConverter()
     }
 

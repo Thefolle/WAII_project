@@ -14,6 +14,7 @@ import org.springframework.kafka.core.*
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer
 import org.springframework.kafka.listener.SeekToCurrentErrorHandler
 import org.springframework.kafka.support.converter.StringJsonMessageConverter
+import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.util.backoff.BackOffExecution
 
 @Configuration
@@ -36,12 +37,12 @@ class CreateOrder {
     }
 
     @Bean
-    fun createOrderExceptionKafkaTemplate(producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {
+    fun createOrderExceptionKafkaTemplate(@Qualifier("createOrderExceptionProducerFactory") producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {
         return KafkaTemplate(producerFactory)
     }
 
     @Bean
-    fun createOrderConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderConsumerFactory") consumerFactory: ConsumerFactory<String, String>, messageConverter: StringJsonMessageConverter, replyTemplate: KafkaTemplate<String, Long>, @Qualifier("exceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, String> {
+    fun createOrderConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderConsumerFactory") consumerFactory: ConsumerFactory<String, String>, messageConverter: StringJsonMessageConverter, replyTemplate: KafkaTemplate<String, Long>, @Qualifier("createOrderExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, String> {
         var container = ConcurrentKafkaListenerContainerFactory<String, String>()
         container.consumerFactory = consumerFactory
         container.setMessageConverter(messageConverter)
@@ -71,9 +72,19 @@ class CreateOrder {
     }
 
     @Bean
+    fun createOrderExceptionProducerFactory(): ProducerFactory<String, Any> {
+        var config = mapOf(
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
+        )
+
+        return DefaultKafkaProducerFactory(config)
+    }
+
+    @Bean
     fun createOrderKafkaTemplate(producerFactory: ProducerFactory<String, Long>): KafkaTemplate<String, Long> {
         return KafkaTemplate(producerFactory)
     }
-
 
 }

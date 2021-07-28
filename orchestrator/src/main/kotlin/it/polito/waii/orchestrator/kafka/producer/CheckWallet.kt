@@ -39,12 +39,23 @@ class CheckWallet {
     }
 
     @Bean
+    fun checkWalletExceptionProducerFactory(): ProducerFactory<String, Any> {
+        var config = mapOf(
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
+        )
+
+        return DefaultKafkaProducerFactory(config)
+    }
+
+    @Bean
     fun checkWalletKafkaTemplate(producerFactory: ProducerFactory<String, UpdateQuantityDtoKafka>): KafkaTemplate<String, UpdateQuantityDtoKafka> {
         return KafkaTemplate(producerFactory)
     }
 
     @Bean
-    fun checkWalletReplyingKafkaTemplate(producerFactory: ProducerFactory<String, UpdateQuantityDtoKafka>, container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, UpdateQuantityDtoKafka, Long> {
+    fun checkWalletReplyingKafkaTemplate(producerFactory: ProducerFactory<String, UpdateQuantityDtoKafka>, @Qualifier("checkWalletConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, UpdateQuantityDtoKafka, Long> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
         return replyingKafkaTemplate
@@ -65,7 +76,7 @@ class CheckWallet {
     }
 
     @Bean
-    fun checkWalletExceptionKafkaTemplate(producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {
+    fun checkWalletExceptionKafkaTemplate(@Qualifier("checkWalletExceptionProducerFactory") producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {
         return KafkaTemplate(producerFactory)
     }
 

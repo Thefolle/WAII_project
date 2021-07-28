@@ -22,8 +22,7 @@ import javax.servlet.http.HttpServletResponse
 
 @SpringBootApplication
 @EnableEurekaClient
-//@EnableAspectJAutoProxy(proxyTargetClass = true)
-class WalletServiceApplication{
+class WalletServiceApplication {
 
     @Bean
     fun passwordEncoder(): PasswordEncoder {
