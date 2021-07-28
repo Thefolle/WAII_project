@@ -147,8 +147,10 @@ class WarehouseServiceImpl : WarehouseService {
             HttpStatus.NOT_FOUND,
             "No warehouse with id $warehouseId exists."
         )
+        println(-1)
         val compKey = CompositeKey(updateQuantityDTO.productId, warehouseId)
-        val productWarehouseOptional = productWarehouseRepository.findById(compKey)
+        val productWarehouseOptional = productWarehouseRepository.findByCompositeKey(compKey)
+        println(-2)
         // if I need to add the quantity...
         if (updateQuantityDTO.action == Action.ADD){
             if (productWarehouseOptional.isEmpty){
@@ -171,19 +173,24 @@ class WarehouseServiceImpl : WarehouseService {
             }
         }
 
+
         // if I need to sub the quantity...
         else{
+            println(1)
             //...and if I don't have the relation, I just throw an exception
             if (productWarehouseOptional.isEmpty) throw ResponseStatusException(
                 HttpStatus.NOT_FOUND,
                 "No product with id ${updateQuantityDTO.productId} exists inside warehouse with id $warehouseId."
             )
+            println(2)
             //else I simply sub the specified quantity and check the alarm level
             val productWarehouse = productWarehouseOptional.get()
+            println(3)
             if (productWarehouse.quantity < updateQuantityDTO.quantity) throw ResponseStatusException(
                 HttpStatus.FORBIDDEN,
                 "Not enough products!"
             )
+            println("reducing quantity...")
 
             productWarehouse.quantity -= updateQuantityDTO.quantity
             if (productWarehouse.quantity < productWarehouse.alarmLevel){

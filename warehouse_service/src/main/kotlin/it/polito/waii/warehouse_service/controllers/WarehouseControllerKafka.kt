@@ -1,13 +1,14 @@
 package it.polito.waii.warehouse_service.controllers
 
 import it.polito.waii.warehouse_service.dtos.UpdateQuantityDtoKafka
+import it.polito.waii.warehouse_service.services.WarehouseService
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.annotation.TopicPartition
 import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.stereotype.Component
 
 @Component
-class WarehouseControllerKafka {
+class WarehouseControllerKafka(val warehouseService: WarehouseService) {
 
     @SendTo("warehouse_service_responses")
     @KafkaListener(
@@ -15,7 +16,13 @@ class WarehouseControllerKafka {
         topicPartitions = [TopicPartition(topic = "warehouse_service_requests", partitions = ["0"])]
     )
     fun updateProductQuantity(updateQuantityDtoKafka: UpdateQuantityDtoKafka): Long {
-        println("\n\nWarehouse received\n\n")
+        println("Warehouse service received")
+
+        warehouseService
+            .updateProductQuantity(
+                updateQuantityDtoKafka.warehouseId,
+                updateQuantityDtoKafka.toUpdateQuantityDto()
+            )
 
         return 10
     }

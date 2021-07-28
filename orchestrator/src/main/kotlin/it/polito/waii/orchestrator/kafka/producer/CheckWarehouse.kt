@@ -1,6 +1,5 @@
 package it.polito.waii.orchestrator.kafka.producer
 
-import it.polito.waii.orchestrator.dtos.TransactionDto
 import it.polito.waii.orchestrator.dtos.UpdateQuantityDtoKafka
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -30,7 +29,7 @@ class CheckWarehouse {
     val REQUEST_TIMEOUT_MS_CONFIG = 15000
 
     @Bean
-    fun checkWarehouseProducerFactory(): ProducerFactory<String, TransactionDto> {
+    fun checkWarehouseProducerFactory(): ProducerFactory<String, UpdateQuantityDtoKafka> {
         var config = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
@@ -52,12 +51,12 @@ class CheckWarehouse {
     }
 
     @Bean
-    fun checkWarehouseKafkaTemplate(producerFactory: ProducerFactory<String, TransactionDto>): KafkaTemplate<String, TransactionDto> {
+    fun checkWarehouseKafkaTemplate(producerFactory: ProducerFactory<String, UpdateQuantityDtoKafka>): KafkaTemplate<String, UpdateQuantityDtoKafka> {
         return KafkaTemplate(producerFactory)
     }
 
     @Bean
-    fun checkWarehouseReplyingKafkaTemplate(producerFactory: ProducerFactory<String, TransactionDto>, @Qualifier("checkWarehouseConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, TransactionDto, Long> {
+    fun checkWarehouseReplyingKafkaTemplate(producerFactory: ProducerFactory<String, UpdateQuantityDtoKafka>, @Qualifier("checkWarehouseConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, UpdateQuantityDtoKafka, Long> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
         return replyingKafkaTemplate
@@ -69,7 +68,7 @@ class CheckWarehouse {
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to LongDeserializer::class.java,
-            ConsumerConfig.GROUP_ID_CONFIG to "orchestrator_group_id",
+            ConsumerConfig.GROUP_ID_CONFIG to "orchestrator_group_id_0",
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest",
             ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG to REQUEST_TIMEOUT_MS_CONFIG
         )
@@ -85,6 +84,7 @@ class CheckWarehouse {
     @Bean
     fun checkWarehouseConcurrentKafkaListenerContainerFactory(@Qualifier("checkWarehouseConsumerFactory") consumerFactory: ConsumerFactory<String, Long>, messageConverter: StringJsonMessageConverter, replyTemplate: KafkaTemplate<String, Long>, @Qualifier("checkWarehouseExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Long> {
         var container = ConcurrentKafkaListenerContainerFactory<String, Long>()
+        container.containerProperties.setGroupId("orchestrator_group_id_0")
         container.consumerFactory = consumerFactory
         container.setMessageConverter(messageConverter)
         container.setReplyTemplate(replyTemplate)
@@ -104,7 +104,7 @@ class CheckWarehouse {
     @Bean
     fun checkWarehouseConcurrentMessageListenerContainer(@Qualifier("checkWarehouseConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, Long>): ConcurrentMessageListenerContainer<String, Long> {
         var container = containerFactory.createContainer("warehouse_service_responses")
-        container.containerProperties.setGroupId("warehouse_service_group_id_1")
+        container.containerProperties.setGroupId("orchestrator_group_id_0")
 
         val consumerAwareBatchErrorHandler = ConsumerAwareBatchErrorHandler { thrownException, data, consumer ->
             if (thrownException is SerializationException) {

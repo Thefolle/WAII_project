@@ -52,12 +52,12 @@ class TestController {
                         OrderDto(
                             null,
                             2,
-                            0,
+                            1,
                             mapOf(
-                                0L to DeliveryDto(null, "Paseo de Gracia, 56", 0)
+                                1L to DeliveryDto(null, "Paseo de Gracia, 56", 2)
                             ),
                             mapOf(
-                                0L to 2
+                                1L to 1
                             ),
                             3.5f,
                             null
@@ -73,6 +73,7 @@ class TestController {
                     .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
                     .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
                     .build(),
+                Duration.ofSeconds(15),
                 ParameterizedTypeReference.forType(Long::class.java)
             )
             .get()

@@ -13,6 +13,7 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.*
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer
 import org.springframework.kafka.listener.SeekToCurrentErrorHandler
+import org.springframework.kafka.support.converter.MessageConverter
 import org.springframework.kafka.support.converter.StringJsonMessageConverter
 import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.util.backoff.BackOffExecution
@@ -28,7 +29,7 @@ class PerformTransaction {
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ConsumerConfig.GROUP_ID_CONFIG to "wallet_group_id",
+            ConsumerConfig.GROUP_ID_CONFIG to "wallet_service_group_id_0",
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest",
             ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG to REQUEST_TIMEOUT_MS_CONFIG
         )
@@ -53,8 +54,9 @@ class PerformTransaction {
     }
 
     @Bean
-    fun performTransactionConcurrentKafkaListenerContainerFactory(@Qualifier("performTransactionConsumerFactory") consumerFactory: ConsumerFactory<String, String>, messageConverter: StringJsonMessageConverter, replyTemplate: KafkaTemplate<String, Long>, @Qualifier("performTransactionExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, String> {
+    fun performTransactionConcurrentKafkaListenerContainerFactory(@Qualifier("performTransactionConsumerFactory") consumerFactory: ConsumerFactory<String, String>, messageConverter: MessageConverter, replyTemplate: KafkaTemplate<String, Long>, @Qualifier("performTransactionExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, String> {
         var container = ConcurrentKafkaListenerContainerFactory<String, String>()
+        container.containerProperties.setGroupId("wallet_service_group_id_0")
         container.consumerFactory = consumerFactory
         container.setMessageConverter(messageConverter)
         container.setReplyTemplate(replyTemplate)

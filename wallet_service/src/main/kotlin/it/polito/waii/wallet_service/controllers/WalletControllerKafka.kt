@@ -16,6 +16,8 @@ class WalletControllerKafka(private val walletService: WalletService) {
         topicPartitions = [TopicPartition(topic = "wallet_service_requests", partitions = ["0"])]
     )
     fun performTransaction(transactionDTO: TransactionDTO): Long {
+        println("Wallet received")
+
         return if (transactionDTO.isRech)
             walletService.doRecharge(transactionDTO).tid!!
         else

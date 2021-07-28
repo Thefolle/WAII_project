@@ -7,4 +7,10 @@ class UpdateQuantityDtoKafka(
     var productId: Long,
     var quantity: Long,
     var action: Action
-)
+) {
+    fun toUpdateQuantityDto(): UpdateQuantityDTO = UpdateQuantityDTO(
+        productId,
+        quantity,
+        action
+    )
+}

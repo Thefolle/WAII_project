@@ -1,5 +1,6 @@
 package it.polito.waii.orchestrator.kafka.producer
 
+import it.polito.waii.orchestrator.dtos.TransactionDto
 import it.polito.waii.orchestrator.dtos.UpdateQuantityDtoKafka
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -28,7 +29,7 @@ class CheckWallet {
     val REQUEST_TIMEOUT_MS_CONFIG = 15000
 
     @Bean
-    fun checkWalletProducerFactory(): ProducerFactory<String, UpdateQuantityDtoKafka> {
+    fun checkWalletProducerFactory(): ProducerFactory<String, TransactionDto> {
         var config = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
@@ -50,12 +51,12 @@ class CheckWallet {
     }
 
     @Bean
-    fun checkWalletKafkaTemplate(producerFactory: ProducerFactory<String, UpdateQuantityDtoKafka>): KafkaTemplate<String, UpdateQuantityDtoKafka> {
+    fun checkWalletKafkaTemplate(producerFactory: ProducerFactory<String, TransactionDto>): KafkaTemplate<String, TransactionDto> {
         return KafkaTemplate(producerFactory)
     }
 
     @Bean
-    fun checkWalletReplyingKafkaTemplate(producerFactory: ProducerFactory<String, UpdateQuantityDtoKafka>, @Qualifier("checkWalletConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, UpdateQuantityDtoKafka, Long> {
+    fun checkWalletReplyingKafkaTemplate(producerFactory: ProducerFactory<String, TransactionDto>, @Qualifier("checkWalletConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, TransactionDto, Long> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
         return replyingKafkaTemplate
@@ -67,7 +68,7 @@ class CheckWallet {
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to LongDeserializer::class.java,
-            ConsumerConfig.GROUP_ID_CONFIG to "orchestrator_group_id",
+            ConsumerConfig.GROUP_ID_CONFIG to "orchestrator_group_id_1",
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest",
             ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG to REQUEST_TIMEOUT_MS_CONFIG
         )
@@ -101,12 +102,12 @@ class CheckWallet {
 
     @Bean
     fun checkWalletConcurrentMessageListenerContainer(@Qualifier("checkWalletConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, Long>): ConcurrentMessageListenerContainer<String, Long> {
-        var container = containerFactory.createContainer("warehouse_service_responses")
-        container.containerProperties.setGroupId("warehouse_service_group_id_1")
+        var container = containerFactory.createContainer("wallet_service_responses")
+        container.containerProperties.setGroupId("orchestrator_group_id_1")
 
         val consumerAwareBatchErrorHandler = ConsumerAwareBatchErrorHandler { thrownException, data, consumer ->
             if (thrownException is SerializationException) {
-                consumer.seek(TopicPartition("warehouse_service_responses", 0), consumer.position(TopicPartition("warehouse_service_responses", 0)) + 1)
+                consumer.seek(TopicPartition("wallet_service_responses", 0), consumer.position(TopicPartition("wallet_service_responses", 0)) + 1)
             }
         }
         container.setBatchErrorHandler(consumerAwareBatchErrorHandler)
