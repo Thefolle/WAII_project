@@ -20,7 +20,7 @@ import org.springframework.util.backoff.BackOffExecution
 class CheckQuantity {
 
     @Bean
-    fun updateQuantityConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<Any, Any>, messageConverter: MessageConverter, replyKafkaTemplate: KafkaTemplate<String, Long>, exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Any> {
+    fun updateQuantitiesConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<Any, Any>, messageConverter: MessageConverter, replyKafkaTemplate: KafkaTemplate<String, Long>, exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Any> {
         val concurrentKafkaListenerContainerFactory = ConcurrentKafkaListenerContainerFactory<String, Any>()
         concurrentKafkaListenerContainerFactory.consumerFactory = consumerFactory
         concurrentKafkaListenerContainerFactory.setMessageConverter(messageConverter)

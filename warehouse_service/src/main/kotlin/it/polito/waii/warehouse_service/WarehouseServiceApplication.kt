@@ -120,12 +120,12 @@ class WarehouseServiceApplication {
             productRepository.save(p2)
 
             // make comment
-            val c1 = mutableSetOf<Comment>(Comment(null, "About Melon",
-                                                        "Juicy", 4,
-                                                    LocalDateTime.now(), p1))
-
-            p1.comments = c1
-            productRepository.save(p1)
+//            val c1 = mutableSetOf<Comment>(Comment(null, "About Melon",
+//                                                        "Juicy", 4,
+//                                                    LocalDateTime.now(), p1))
+//
+//            p1.comments = c1
+//            productRepository.save(p1)
 
             var p3 = Product(null, "lorry", "capacity 10 tons", "truck",
                 LocalDateTime.now(), 30F, 3.1F,
@@ -137,6 +137,23 @@ class WarehouseServiceApplication {
                 null,null, null)
             productRepository.save(p4)
 
+
+            // link products and warehouse
+            val ckey1 = CompositeKey(p1.id!!, w1.id!!)
+            val pw1 = ProductWarehouse(ckey1, p1, w1, 5, 3)
+            productWarehouseRepository.save(pw1)
+
+            val ckey2 = CompositeKey(p2.id!!, w1.id!!)
+            val pw2 = ProductWarehouse(ckey2, p2, w1, 15, 7)
+            productWarehouseRepository.save(pw2)
+
+            val ckey3 = CompositeKey(p3.id!!, w3.id!!)
+            val pw3 = ProductWarehouse(ckey3, p3, w1, 50, 13)
+            productWarehouseRepository.save(pw3)
+
+            val ckey4 = CompositeKey(p4.id!!, w4.id!!)
+            val pw4 = ProductWarehouse(ckey4, p4, w4, 21, 8)
+            productWarehouseRepository.save(pw4)
 
         }
     }
