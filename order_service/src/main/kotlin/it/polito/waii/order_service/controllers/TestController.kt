@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import it.polito.waii.order_service.dtos.DeliveryDto
 import it.polito.waii.order_service.dtos.OrderDto
 import it.polito.waii.order_service.dtos.PatchOrderDto
-import it.polito.waii.order_service.entities.OrderStatus
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.ParameterizedTypeReference
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.*
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.time.Duration
-import java.util.concurrent.TimeUnit
 
 @RestController
 class TestController {
@@ -26,7 +24,7 @@ class TestController {
     lateinit var stringVoidSetOrderDtoReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Void, Set<OrderDto>>
 
     @Autowired
-    @Qualifier("orderDtoLongReplyingKafkaTemplate")
+    @Qualifier("createOrderLoopbackReplyingKafkaTemplate")
     lateinit var stringOrderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDto, Long>
 
     @Autowired

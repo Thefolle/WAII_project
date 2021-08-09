@@ -86,7 +86,7 @@ class OrderController {
     }
 
     @KafkaListener(
-        containerFactory = "deleteOrderByIdConcurrentKafkaListenerContainerFactory",
+        containerFactory = "deleteOrderConcurrentKafkaListenerContainerFactory",
         topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["4"])]
     )
     fun deleteOrderById(id: Long) {

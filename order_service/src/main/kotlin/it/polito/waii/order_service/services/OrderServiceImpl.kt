@@ -1,21 +1,15 @@
 package it.polito.waii.order_service.services
 
-import it.polito.waii.order_service.dtos.DeliveryDto
 import it.polito.waii.order_service.dtos.OrderDto
 import it.polito.waii.order_service.dtos.PatchOrderDto
 import it.polito.waii.order_service.entities.*
-import it.polito.waii.order_service.exceptions.UnsatisfiableRequestException
 import it.polito.waii.order_service.repositories.OrderRepository
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
-import org.apache.kafka.common.errors.TimeoutException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.ParameterizedTypeReference
-import org.springframework.kafka.core.KafkaTemplate
-import org.springframework.kafka.requestreply.KafkaReplyTimeoutException
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.messaging.support.MessageBuilder
@@ -25,6 +19,7 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.Flux
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import java.time.Duration
 
 @Service
 class OrderServiceImpl : OrderService {
@@ -33,7 +28,7 @@ class OrderServiceImpl : OrderService {
     lateinit var orderRepository: OrderRepository
 
     @Autowired
-    @Qualifier("orderDtoLong2ReplyingKafkaTemplate")
+    @Qualifier("createOrderToOrchestratorReplyingKafkaTemplate")
     lateinit var orderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDto, Long>
 
     var i: Long = 0
@@ -63,6 +58,7 @@ class OrderServiceImpl : OrderService {
                     .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
                     .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
                     .build(),
+                Duration.ofSeconds(15),
                 ParameterizedTypeReference.forType<Long>(Long::class.java)
             )
         val futureResult = future.get().payload

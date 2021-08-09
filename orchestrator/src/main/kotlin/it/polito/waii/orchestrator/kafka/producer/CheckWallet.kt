@@ -26,8 +26,6 @@ import org.springframework.util.backoff.BackOffExecution
 @Configuration
 class CheckWallet {
 
-    val REQUEST_TIMEOUT_MS_CONFIG = 15000
-
     @Bean
     fun checkWalletProducerFactory(): ProducerFactory<String, TransactionDto> {
         var config = mapOf(
@@ -69,8 +67,7 @@ class CheckWallet {
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to LongDeserializer::class.java,
             ConsumerConfig.GROUP_ID_CONFIG to "orchestrator_group_id_1",
-            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest",
-            ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG to REQUEST_TIMEOUT_MS_CONFIG
+            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest"
         )
 
         return DefaultKafkaConsumerFactory(config)
@@ -84,6 +81,7 @@ class CheckWallet {
     @Bean
     fun checkWalletConcurrentKafkaListenerContainerFactory(@Qualifier("checkWalletConsumerFactory") consumerFactory: ConsumerFactory<String, Long>, messageConverter: StringJsonMessageConverter, replyTemplate: KafkaTemplate<String, Long>, @Qualifier("checkWalletExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Long> {
         var container = ConcurrentKafkaListenerContainerFactory<String, Long>()
+        container.containerProperties.setGroupId("orchestrator_group_id_1")
         container.consumerFactory = consumerFactory
         container.setMessageConverter(messageConverter)
         container.setReplyTemplate(replyTemplate)

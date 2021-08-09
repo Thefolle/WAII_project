@@ -34,7 +34,8 @@ class OrchestratorServiceImpl(
                     .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
                     .setHeader(KafkaHeaders.REPLY_TOPIC, "warehouse_service_responses")
                     .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
-                    .build()
+                    .build(),
+                Duration.ofSeconds(15)
             )
             .get()
             .payload

@@ -38,7 +38,7 @@ interface OrderRepository: ReactiveNeo4jRepository<Order, Long> {
 
     @Query(
         "match (c:Customer {id: \$id})\n" +
-                "where not (p)-[]-()\n" +
+                "where not (c)-[]-()\n" +
                 "delete c"
     )
     fun deleteCustomerIfIsolated(@Param("id") id: Long): Mono<Void>
@@ -51,7 +51,7 @@ interface OrderRepository: ReactiveNeo4jRepository<Order, Long> {
 
     @Query(
         "match (w:Wallet {id: \$id})\n" +
-                "where not (p)-[]-()\n" +
+                "where not (w)-[]-()\n" +
                 "delete w"
     )
     fun deleteWalletIfIsolated(@Param("id") id: Long): Mono<Void>
@@ -67,8 +67,14 @@ interface OrderRepository: ReactiveNeo4jRepository<Order, Long> {
         "match (o:Order {id: \$id})\n" +
                 "match (o)-[:BUYER]->(customer:Customer)\n" +
                 "match (o)-[:DELIVERIES]->(delivery:Delivery)-[:WAREHOUSE]->(warehouse:Warehouse)\n" +
+                "match (o)-[:WALLET]->(wallet:Wallet)\n" +
                 "match (delivery)-[:PRODUCT]->(product:Product)\n" +
                 "detach delete o, delivery\n" +
+                "\n" +
+                "with product, customer, warehouse, wallet\n" +
+                "match (wallet)\n" +
+                "where not (wallet)-[]-()\n" +
+                "delete wallet\n" +
                 "\n" +
                 "with product, customer, warehouse\n" +
                 "\n" +

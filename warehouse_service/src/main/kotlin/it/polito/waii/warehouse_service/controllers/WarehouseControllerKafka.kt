@@ -19,13 +19,15 @@ class WarehouseControllerKafka(val warehouseService: WarehouseService) {
     fun updateProductQuantity(updateQuantityDtoKafka: UpdateQuantityDtoKafka): Long {
         println("Warehouse service received")
 
-        throw UnsatisfiableRequestException("test exception")
-
-        warehouseService
-            .updateProductQuantity(
-                updateQuantityDtoKafka.warehouseId,
-                updateQuantityDtoKafka.toUpdateQuantityDto()
-            )
+        try {
+            warehouseService
+                .updateProductQuantity(
+                    updateQuantityDtoKafka.warehouseId,
+                    updateQuantityDtoKafka.toUpdateQuantityDto()
+                )
+        } catch (exception: Exception) {
+            throw UnsatisfiableRequestException(exception.message)
+        }
 
         return 10
     }
