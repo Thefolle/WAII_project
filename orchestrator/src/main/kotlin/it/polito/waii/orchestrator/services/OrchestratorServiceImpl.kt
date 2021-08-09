@@ -12,11 +12,11 @@ import java.time.Duration
 
 @Service
 class OrchestratorServiceImpl(
-    val warehouseReplyingKafkaTemplate: ReplyingKafkaTemplate<String, UpdateQuantityDtoKafka, Long>,
+    val warehouseReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Set<UpdateQuantityDtoKafka>, Long>,
     val walletReplyingKafkaTemplate: ReplyingKafkaTemplate<String, TransactionDto, Long>
     ) : OrchestratorService {
 
-    override fun checkWarehouse(updateQuantityDtoKafka: UpdateQuantityDtoKafka) {
+    override fun checkWarehouse(updateQuantitiesDto: Set<UpdateQuantityDtoKafka>) {
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
         replyPartition.putInt(0)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
@@ -26,7 +26,7 @@ class OrchestratorServiceImpl(
             .sendAndReceive(
                 MessageBuilder
                     .withPayload(
-                        updateQuantityDtoKafka
+                        updateQuantitiesDto
                     )
                     .setHeader(KafkaHeaders.TOPIC, "warehouse_service_requests")
                     .setHeader(KafkaHeaders.PARTITION_ID, 0)

@@ -13,6 +13,7 @@ interface WarehouseService {
     fun getProductQuantity(warehouseId: Long, productId: Long): Long
     fun getAllQuantities(warehouseId: Long): List<ProductQuantityDTO>
     fun updateProductQuantity(warehouseId: Long, updateQuantityDTO: UpdateQuantityDTO): ProductWarehouseDTO
+    fun updateProductQuantities(updateQuantitiesDto: Set<UpdateQuantityDtoKafka>)
     fun updateProductAlarmLevel(warehouseId: Long, productId: Long, newAlarmLevel: Long): ProductWarehouseDTO
 
 }

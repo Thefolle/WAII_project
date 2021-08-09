@@ -201,6 +201,16 @@ class WarehouseServiceImpl : WarehouseService {
          return productWarehouseRepository.findById(compKey).get().toDTO()
     }
 
+    override fun updateProductQuantities(updateQuantitiesDTO: Set<UpdateQuantityDtoKafka>) {
+        updateQuantitiesDTO
+            .forEach {
+                updateProductQuantity(
+                    it.warehouseId,
+                    it.toUpdateQuantityDto()
+                )
+            }
+    }
+
     override fun updateProductAlarmLevel(warehouseId: Long, productId: Long, newAlarmLevel: Long): ProductWarehouseDTO {
         val productWarehouse = getProductWarehouseById(productId, warehouseId)
         productWarehouse.alarmLevel = newAlarmLevel

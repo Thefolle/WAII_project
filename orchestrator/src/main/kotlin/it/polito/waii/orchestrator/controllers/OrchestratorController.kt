@@ -29,14 +29,19 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
         println("orchestrator received")
 
         // warehouse check
-        orchestratorService.checkWarehouse(
-            UpdateQuantityDtoKafka(
-                orderDtoOrchestrator.deliveries.values.elementAt(0).warehouseId,
-                orderDtoOrchestrator.deliveries.keys.elementAt(0),
-                orderDtoOrchestrator.quantities[orderDtoOrchestrator.deliveries.keys.elementAt(0)]!!,
-                Action.REMOVE
+        orchestratorService
+            .checkWarehouse(
+                orderDtoOrchestrator.deliveries.keys
+                    .map {
+                        UpdateQuantityDtoKafka(
+                            orderDtoOrchestrator.deliveries[it]!!.warehouseId,
+                            it,
+                            orderDtoOrchestrator.quantities[it]!!,
+                            Action.REMOVE
+                        )
+                    }
+                    .toSet()
             )
-        )
 
         println("Warehouse checked successfully")
 

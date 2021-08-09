@@ -1,5 +1,6 @@
 package it.polito.waii.orchestrator.kafka.producer
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import it.polito.waii.orchestrator.dtos.UpdateQuantityDtoKafka
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -26,15 +27,16 @@ import org.springframework.util.backoff.BackOffExecution
 @Configuration
 class CheckWarehouse {
 
-    val REQUEST_TIMEOUT_MS_CONFIG = 15000
-
     @Bean
-    fun checkWarehouseProducerFactory(): ProducerFactory<String, UpdateQuantityDtoKafka> {
+    fun checkWarehouseProducerFactory(): ProducerFactory<String, Set<UpdateQuantityDtoKafka>> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
-            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092"
         )
+
+        val objectMapper = ObjectMapper()
+        val type = objectMapper.typeFactory.constructParametricType(Set::class.java, UpdateQuantityDtoKafka::class.java)
+
+        return DefaultKafkaProducerFactory(config, StringSerializer(), JsonSerializer(type, objectMapper))
 
         return DefaultKafkaProducerFactory(config)
     }
@@ -51,12 +53,12 @@ class CheckWarehouse {
     }
 
     @Bean
-    fun checkWarehouseKafkaTemplate(producerFactory: ProducerFactory<String, UpdateQuantityDtoKafka>): KafkaTemplate<String, UpdateQuantityDtoKafka> {
+    fun checkWarehouseKafkaTemplate(producerFactory: ProducerFactory<String, Set<UpdateQuantityDtoKafka>>): KafkaTemplate<String, Set<UpdateQuantityDtoKafka>> {
         return KafkaTemplate(producerFactory)
     }
 
     @Bean
-    fun checkWarehouseReplyingKafkaTemplate(producerFactory: ProducerFactory<String, UpdateQuantityDtoKafka>, @Qualifier("checkWarehouseConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, UpdateQuantityDtoKafka, Long> {
+    fun checkWarehouseReplyingKafkaTemplate(producerFactory: ProducerFactory<String, Set<UpdateQuantityDtoKafka>>, @Qualifier("checkWarehouseConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, Set<UpdateQuantityDtoKafka>, Long> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
         return replyingKafkaTemplate

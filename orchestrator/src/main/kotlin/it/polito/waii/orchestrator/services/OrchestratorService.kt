@@ -5,7 +5,7 @@ import it.polito.waii.orchestrator.dtos.UpdateQuantityDtoKafka
 
 interface OrchestratorService {
 
-    fun checkWarehouse(updateQuantityDtoKafka: UpdateQuantityDtoKafka)
+    fun checkWarehouse(updateQuantitiesDto: Set<UpdateQuantityDtoKafka>)
     fun checkWallet(transactionDto: TransactionDto)
 
 }
