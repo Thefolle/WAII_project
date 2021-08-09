@@ -96,6 +96,18 @@ class WarehouseServiceApplication {
                                 100, null)
             warehouseRepository.save(w1)
 
+            val w2 = Warehouse(null, "Vehicle","Pisa", "Toscana",
+                100, null)
+            warehouseRepository.save(w2)
+
+            val w3 = Warehouse(null, "Vino","Alba", "Piemonte",
+                200, null)
+            warehouseRepository.save(w3)
+
+            val w4 = Warehouse(null, "Water","Torino", "Piemonte",
+                150, null)
+            warehouseRepository.save(w4)
+
             // Add products
             var p1 = Product(null, "melon", "origin Sicily", "fruit",
                                 LocalDateTime.now(), 3F, 2.1F,
@@ -114,6 +126,16 @@ class WarehouseServiceApplication {
 
             p1.comments = c1
             productRepository.save(p1)
+
+            var p3 = Product(null, "lorry", "capacity 10 tons", "truck",
+                LocalDateTime.now(), 30F, 3.1F,
+                null,null, null)
+            productRepository.save(p3)
+
+            val p4 = Product(null, "water naturale", "origin Piemonte", "drink",
+                LocalDateTime.now(), 1F, 4.5F,
+                null,null, null)
+            productRepository.save(p4)
 
 
         }
