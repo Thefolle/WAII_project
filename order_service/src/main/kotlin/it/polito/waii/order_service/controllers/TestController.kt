@@ -7,12 +7,14 @@ import it.polito.waii.order_service.dtos.PatchOrderDto
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.kafka.support.KafkaNull
 import org.springframework.messaging.support.MessageBuilder
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.time.Duration
@@ -43,7 +45,8 @@ class TestController {
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
         correlationId.putInt(0)
 
-        return stringOrderDtoLongReplyingKafkaTemplate
+        val future =
+        stringOrderDtoLongReplyingKafkaTemplate
             .sendAndReceive<Long?>(
                 MessageBuilder
                     .withPayload(
@@ -76,8 +79,15 @@ class TestController {
                 Duration.ofSeconds(15),
                 ParameterizedTypeReference.forType(Long::class.java)
             )
-            .get()
-            .payload
+
+        var result: Long
+        try {
+            result = future.get().payload
+        } catch (exception: Exception) {
+            throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, exception.message)
+        }
+
+        return result
     }
 
     @GetMapping

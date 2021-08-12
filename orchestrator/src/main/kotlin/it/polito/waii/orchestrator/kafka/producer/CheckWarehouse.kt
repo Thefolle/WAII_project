@@ -22,6 +22,7 @@ import org.springframework.kafka.listener.SeekToCurrentErrorHandler
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.converter.StringJsonMessageConverter
 import org.springframework.kafka.support.serializer.JsonSerializer
+import org.springframework.retry.support.RetryTemplateBuilder
 import org.springframework.util.backoff.BackOffExecution
 
 @Configuration
@@ -84,22 +85,25 @@ class CheckWarehouse {
 
     @Bean
     fun checkWarehouseConcurrentKafkaListenerContainerFactory(@Qualifier("checkWarehouseConsumerFactory") consumerFactory: ConsumerFactory<String, Long>, messageConverter: StringJsonMessageConverter, replyTemplate: KafkaTemplate<String, Long>, @Qualifier("checkWarehouseExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Long> {
-        var container = ConcurrentKafkaListenerContainerFactory<String, Long>()
-        container.containerProperties.setGroupId("orchestrator_group_id_0")
-        container.consumerFactory = consumerFactory
-        container.setMessageConverter(messageConverter)
-        container.setReplyTemplate(replyTemplate)
+        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, Long>()
+        containerFactory.containerProperties.setGroupId("orchestrator_group_id_0")
+        containerFactory.consumerFactory = consumerFactory
+        containerFactory.setMessageConverter(messageConverter)
+        containerFactory.setReplyTemplate(replyTemplate)
+        containerFactory.setRetryTemplate(
+            RetryTemplateBuilder()
+                .maxAttempts(1)
+                .build()
+        )
 
-        // The backoff controls how many times Kafka will attempt to send the same request on a controller;
-        // in this case, no additional attempts are allowed
-        container.setErrorHandler(SeekToCurrentErrorHandler(DeadLetterPublishingRecoverer(exceptionReplyTemplate) { _, _ ->
+        containerFactory.setErrorHandler(SeekToCurrentErrorHandler(DeadLetterPublishingRecoverer(exceptionReplyTemplate) { _, _ ->
             TopicPartition(
                 "exceptions",
                 0
             )
         }) { BackOffExecution { BackOffExecution.STOP } })
 
-        return container
+        return containerFactory
     }
 
     @Bean

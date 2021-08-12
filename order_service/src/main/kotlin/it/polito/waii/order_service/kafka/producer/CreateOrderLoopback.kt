@@ -17,6 +17,7 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.ConsumerAwareBatchErrorHandler
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.serializer.JsonSerializer
+import org.springframework.retry.support.RetryTemplateBuilder
 
 @Configuration
 class CreateOrderLoopback {
@@ -57,10 +58,15 @@ class CreateOrderLoopback {
 
     @Bean
     fun createOrderLoopbackConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderLoopbackConsumerFactory") consumerFactory: ConsumerFactory<String, Long>): ConcurrentKafkaListenerContainerFactory<String, Long> {
-        var container = ConcurrentKafkaListenerContainerFactory<String, Long>()
-        container.consumerFactory = consumerFactory
+        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, Long>()
+        containerFactory.consumerFactory = consumerFactory
+        containerFactory.setRetryTemplate(
+            RetryTemplateBuilder()
+                .maxAttempts(1)
+                .build()
+        )
 
-        return container
+        return containerFactory
     }
 
     @Bean

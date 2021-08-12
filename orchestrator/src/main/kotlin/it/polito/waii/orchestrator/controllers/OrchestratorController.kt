@@ -6,15 +6,10 @@ import it.polito.waii.orchestrator.dtos.TransactionDto
 import it.polito.waii.orchestrator.dtos.UpdateQuantityDtoKafka
 import it.polito.waii.orchestrator.exceptions.UnsatisfiableRequestException
 import it.polito.waii.orchestrator.services.OrchestratorService
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.annotation.TopicPartition
-import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
-import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.messaging.handler.annotation.SendTo
-import org.springframework.messaging.support.MessageBuilder
 import org.springframework.stereotype.Component
-import java.nio.ByteBuffer
 
 @Component
 class OrchestratorController(val orchestratorService: OrchestratorService) {
@@ -38,7 +33,6 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                     )
                 }
                 .toSet()
-
 
         val warehouseFuture =
             orchestratorService
@@ -65,6 +59,7 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                     transactionDto
                 )
 
+        // check eventual failures
         var hasFailedWallet = false
         try {
             walletFuture.get()
@@ -109,7 +104,7 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
         }
 
 
-        return 1
+        return 0
     }
 
 }

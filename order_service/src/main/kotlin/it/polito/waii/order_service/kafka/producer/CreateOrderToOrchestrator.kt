@@ -20,6 +20,8 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.ConsumerAwareBatchErrorHandler
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.serializer.JsonSerializer
+import org.springframework.retry.RetryPolicy
+import org.springframework.retry.support.RetryTemplateBuilder
 
 @Configuration
 class CreateOrderToOrchestrator {
@@ -61,10 +63,15 @@ class CreateOrderToOrchestrator {
 
     @Bean
     fun createOrderToOrchestratorConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderToOrchestratorConsumerFactory") consumerFactory: ConsumerFactory<String, Long>): ConcurrentKafkaListenerContainerFactory<String, Long> {
-        var container = ConcurrentKafkaListenerContainerFactory<String, Long>()
-        container.consumerFactory = consumerFactory
+        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, Long>()
+        containerFactory.consumerFactory = consumerFactory
+        containerFactory.setRetryTemplate(
+            RetryTemplateBuilder()
+                .maxAttempts(1)
+                .build()
+        )
 
-        return container
+        return containerFactory
     }
 
     @Bean
