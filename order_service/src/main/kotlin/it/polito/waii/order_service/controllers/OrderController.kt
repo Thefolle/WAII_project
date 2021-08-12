@@ -41,11 +41,13 @@ class OrderController {
         containerFactory = "createOrderConcurrentKafkaListenerContainerFactory",
         topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["0"])]
     )
-    fun createOrder(orderDto: OrderDto): Long {
-        return orderService
-            .createOrder(orderDto)
-            .block()!!
-    }
+    fun createOrder(orderDto: OrderDto): Long =
+        runBlocking {
+            orderService
+                .createOrder(
+                    orderDto
+                )
+        }
 
     @SendTo("order_service_responses")
     @KafkaListener(

@@ -39,7 +39,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
         }
     }
 
-    private fun getWalletbyId(walletId: Long): Wallet {
+    private fun getWalletById(walletId: Long): Wallet {
         val walletOptional = walletRepository.findById(walletId)
         if (walletOptional.isEmpty) throw ResponseStatusException(HttpStatus.NOT_FOUND, "No wallet with id $walletId exists.")
         return walletOptional.get()
@@ -47,7 +47,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
 
     //@PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun doRecharge(transaction: TransactionDTO): TransactionDTO {
-        val wallet = getWalletbyId(transaction.wid)
+        val wallet = getWalletById(transaction.wid)
         wallet.addBalance(transaction.transactedMoneyAmount)
         val recharge = Recharge(rid = null,
                                 rechargedMoneyAmount = transaction.transactedMoneyAmount,
@@ -66,7 +66,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
 
     @Transactional
     override fun doCharge(transaction: TransactionDTO): TransactionDTO {
-        val wallet = getWalletbyId(transaction.wid)
+        val wallet = getWalletById(transaction.wid)
         //check if I am the owner of the wallet
         //val username = getUsername()
         //if (username != wallet.ownerUsername) throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this wallet!")

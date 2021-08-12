@@ -4,6 +4,7 @@ import it.polito.waii.orchestrator.dtos.Action
 import it.polito.waii.orchestrator.dtos.TransactionDto
 import it.polito.waii.orchestrator.dtos.UpdateQuantityDtoKafka
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
+import org.springframework.kafka.requestreply.RequestReplyMessageFuture
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.messaging.support.MessageBuilder
 import org.springframework.stereotype.Service
@@ -16,13 +17,13 @@ class OrchestratorServiceImpl(
     val walletReplyingKafkaTemplate: ReplyingKafkaTemplate<String, TransactionDto, Long>
     ) : OrchestratorService {
 
-    override fun checkWarehouse(updateQuantitiesDto: Set<UpdateQuantityDtoKafka>) {
+    override fun checkWarehouse(updateQuantitiesDto: Set<UpdateQuantityDtoKafka>): RequestReplyMessageFuture<String, Set<UpdateQuantityDtoKafka>> {
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
         replyPartition.putInt(0)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
         correlationId.putInt(0)
 
-        warehouseReplyingKafkaTemplate
+        return warehouseReplyingKafkaTemplate
             .sendAndReceive(
                 MessageBuilder
                     .withPayload(
@@ -37,17 +38,15 @@ class OrchestratorServiceImpl(
                     .build(),
                 Duration.ofSeconds(15)
             )
-            .get()
-            .payload
     }
 
-    override fun checkWallet(transactionDto: TransactionDto) {
+    override fun checkWallet(transactionDto: TransactionDto): RequestReplyMessageFuture<String, TransactionDto> {
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
         replyPartition.putInt(0)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
         correlationId.putInt(1)
 
-        walletReplyingKafkaTemplate
+        return walletReplyingKafkaTemplate
             .sendAndReceive(
                 MessageBuilder
                     .withPayload(
@@ -59,10 +58,9 @@ class OrchestratorServiceImpl(
                     .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
                     .setHeader(KafkaHeaders.REPLY_TOPIC, "wallet_service_responses")
                     .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
-                    .build()
+                    .build(),
+                Duration.ofSeconds(15)
             )
-            .get()
-            .payload
     }
 
 

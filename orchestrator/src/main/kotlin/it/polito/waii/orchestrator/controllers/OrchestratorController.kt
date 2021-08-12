@@ -26,48 +26,90 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
     )
     fun createOrder(orderDtoOrchestrator: OrderDtoOrchestrator): Long {
 
-        println("orchestrator received")
-
         // warehouse check
-        orchestratorService
-            .checkWarehouse(
-                orderDtoOrchestrator.deliveries.keys
-                    .map {
-                        UpdateQuantityDtoKafka(
-                            orderDtoOrchestrator.deliveries[it]!!.warehouseId,
-                            it,
-                            orderDtoOrchestrator.quantities[it]!!,
-                            Action.REMOVE
-                        )
-                    }
-                    .toSet()
-            )
+        val updateQuantities =
+            orderDtoOrchestrator.deliveries.keys
+                .map {
+                    UpdateQuantityDtoKafka(
+                        orderDtoOrchestrator.deliveries[it]!!.warehouseId,
+                        it,
+                        orderDtoOrchestrator.quantities[it]!!,
+                        Action.REMOVE
+                    )
+                }
+                .toSet()
 
-        println("Warehouse checked successfully")
+
+        val warehouseFuture =
+            orchestratorService
+                .checkWarehouse(
+                    updateQuantities
+                )
 
         // wallet check
-        orchestratorService
-            .checkWallet(
-                TransactionDto(
-                    null,
-                    orderDtoOrchestrator.walletId,
-                    orderDtoOrchestrator.total,
-                    null,
-                    false,
-                    // for now this is null: modify order_service to first save the order, as Saga requires
-                    orderDtoOrchestrator.id,
-                    null
-                )
+        val transactionDto =
+            TransactionDto(
+                null,
+                orderDtoOrchestrator.walletId,
+                orderDtoOrchestrator.total,
+                null,
+                false,
+                // for now this is null: modify order_service to first save the order, as Saga requires
+                orderDtoOrchestrator.id,
+                null
             )
 
-        println("Wallet checked successfully")
+        val walletFuture =
+            orchestratorService
+                .checkWallet(
+                    transactionDto
+                )
+
+        var hasFailedWallet = false
+        try {
+            walletFuture.get()
+        } catch (exception: Exception) {
+            hasFailedWallet = true
+        }
+
+        var hasFailedWarehouse = false
+        try {
+            warehouseFuture.get()
+        } catch (exception: Exception) {
+            hasFailedWarehouse = true
+        }
+
+        if (hasFailedWallet && !hasFailedWarehouse) {
+            orchestratorService
+                .checkWarehouse(
+                    updateQuantities
+                        .map {
+                            it.action = Action.ADD
+                            it
+                        }
+                        .toSet()
+                )
+                .get()
+        } else if (!hasFailedWallet && hasFailedWarehouse) {
+            orchestratorService
+                .checkWallet(
+                    transactionDto
+                        .also {
+                            it.isRech = true
+                        }
+                )
+        }
+
+        if (hasFailedWallet || hasFailedWarehouse) {
+            var message = "The order couldn't be created due to some" +
+                    " failure of the following services: "
+            message += if (hasFailedWallet) "wallet_service " else ""
+            message += if (hasFailedWarehouse) "warehouse_service " else ""
+            throw UnsatisfiableRequestException(message)
+        }
 
 
         return 1
-        // check warehouse availability as warehouse.capacity - sum(product.quantity) >= 0
-        // check wallet balance against the order's total price
-        // perform transactions
-//        throw UnsatisfiableRequestException("The warehouse is full")
     }
 
 }

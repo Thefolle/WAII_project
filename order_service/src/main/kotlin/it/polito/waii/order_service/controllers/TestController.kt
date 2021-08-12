@@ -52,10 +52,12 @@ class TestController {
                             2,
                             1,
                             mapOf(
-                                1L to DeliveryDto(null, "Paseo de Gracia, 56", 2)
+                                1L to DeliveryDto(null, "Paseo de Gracia, 56", 2),
+                                7L to DeliveryDto(null, "Calle Bertrellans, 15 Madrid", 3)
                             ),
                             mapOf(
-                                1L to 1
+                                1L to 1,
+                                7L to 2
                             ),
                             3.5f,
                             null

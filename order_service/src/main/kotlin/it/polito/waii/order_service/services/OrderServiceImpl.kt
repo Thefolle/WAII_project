@@ -3,6 +3,7 @@ package it.polito.waii.order_service.services
 import it.polito.waii.order_service.dtos.OrderDto
 import it.polito.waii.order_service.dtos.PatchOrderDto
 import it.polito.waii.order_service.entities.*
+import it.polito.waii.order_service.exceptions.UnsatisfiableRequestException
 import it.polito.waii.order_service.repositories.OrderRepository
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.reactor.awaitSingle
@@ -18,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Flux
 import java.nio.ByteBuffer
-import java.nio.charset.Charset
 import java.time.Duration
 
 @Service
@@ -31,46 +31,17 @@ class OrderServiceImpl : OrderService {
     @Qualifier("createOrderToOrchestratorReplyingKafkaTemplate")
     lateinit var orderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDto, Long>
 
-    var i: Long = 0
 
     @Transactional
-    override fun createOrder(orderDto: OrderDto): Mono<Long> {
+    override suspend fun createOrder(orderDto: OrderDto): Long = coroutineScope {
 
-        val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
-        replyPartition.putInt(0)
-        val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
-        correlationId.putInt(0)
-
-        val future = orderDtoLongReplyingKafkaTemplate
-            .sendAndReceive(
-                MessageBuilder
-                    .withPayload(
-                        orderDto
-                    )
-                    .setHeader(KafkaHeaders.TOPIC, "orchestrator_requests")
-                    .setHeader(KafkaHeaders.PARTITION_ID, 0)
-                    .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
-                    .setHeader(
-                        KafkaHeaders.REPLY_TOPIC,
-                        "orchestrator_responses".toByteArray(Charset.defaultCharset())
-                    )
-
-                    .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
-                    .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
-                    .build(),
-                Duration.ofSeconds(15),
-                ParameterizedTypeReference.forType<Long>(Long::class.java)
-            )
-        val futureResult = future.get().payload
-
-
-
+        // process the request
         val customer = Customer(orderDto.buyerId)
         val wallet = Wallet(orderDto.walletId)
         val products = orderDto.deliveries.keys.map { Product(it) }.toSet()
         val deliveries = orderDto.deliveries.map {
             Delivery(
-                i++,
+                null,
                 it.value.shippingAddress,
                 Warehouse(it.value.warehouseId),
                 products.first { innerIt -> innerIt.id == it.key },
@@ -79,11 +50,46 @@ class OrderServiceImpl : OrderService {
         }
             .toSet()
 
-//        if (futureResult == 1L) throw UnsatisfiableRequestException("The warehouse is full")
+        val orderId =
+            orderRepository
+                .save(Order(null, customer, wallet, deliveries, orderDto.total, OrderStatus.ISSUED))
+                .map { it.id }
+                .awaitSingle()!!
 
-        return orderRepository
-            .save(Order(i++, customer, wallet, deliveries, orderDto.total, OrderStatus.ISSUED))
-            .map { it.id }
+        // request orchestration
+        val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
+        replyPartition.putInt(0)
+        val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
+        correlationId.putInt(0)
+
+        val future =
+            orderDtoLongReplyingKafkaTemplate
+                .sendAndReceive(
+                    MessageBuilder
+                        .withPayload(
+                            orderDto
+                        )
+                        .setHeader(KafkaHeaders.TOPIC, "orchestrator_requests")
+                        .setHeader(KafkaHeaders.PARTITION_ID, 0)
+                        .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
+                        .setHeader(KafkaHeaders.REPLY_TOPIC, "orchestrator_responses")
+                        .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
+                        .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
+                        .build(),
+                    Duration.ofSeconds(15),
+                    ParameterizedTypeReference.forType<Long>(Long::class.java)
+                )
+
+        try {
+            future
+                .get()
+        } catch (exception: Exception) {
+            deleteOrderById(orderId)
+            throw UnsatisfiableRequestException("The order couldn't be created because" +
+                    " the following service didn't reply: orchestrator_service")
+        }
+
+        orderId
     }
 
     @Transactional
