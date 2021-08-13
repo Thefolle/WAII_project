@@ -73,7 +73,7 @@ class CatalogueServiceApplication{
             val u1 = User(
                 null, "Sofia", password,
                 "Sofiya", "Reyes",
-                "sofiya@email.com", "via Garibaldi 9",
+                "sofiya@yopmail.com", "via Garibaldi 9",
                 true, true, true
             )
             userRepository.save(u1)

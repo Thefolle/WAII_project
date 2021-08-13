@@ -45,7 +45,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
         return walletOptional.get()
     }
 
-    //@PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun doRecharge(transaction: TransactionDTO): TransactionDTO {
         val wallet = getWalletById(transaction.wid)
         wallet.addBalance(transaction.transactedMoneyAmount)
@@ -68,8 +68,8 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
     override fun doCharge(transaction: TransactionDTO): TransactionDTO {
         val wallet = getWalletById(transaction.wid)
         //check if I am the owner of the wallet
-        //val username = getUsername()
-        //if (username != wallet.ownerUsername) throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this wallet!")
+        val username = getUsername()
+        if (username != wallet.ownerUsername) throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this wallet!")
         //check if I have enough money
         if (wallet.balance < transaction.transactedMoneyAmount) throw ResponseStatusException(HttpStatus.FORBIDDEN, "Not enough money!")
         wallet.addBalance(-transaction.transactedMoneyAmount)
@@ -84,7 +84,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
         return transactionRepository
             .save(res)
             .toDto()
-       }
+    }
 
     override fun getTransaction(walletId: Long, transactionId: Long): TransactionDTO {
         val transactionOptional = transactionRepository.findById(transactionId)

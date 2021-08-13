@@ -49,6 +49,16 @@ class KafkaConfigurerApplication {
     }
 
     @Bean
+    fun catalogueServiceRequestsTopic(): NewTopic {
+        return NewTopic("catalogue_service_requests", 1, 1)
+    }
+
+    @Bean
+    fun catalogueServiceResponsesTopic(): NewTopic {
+        return NewTopic("catalogue_service_responses", 1, 1)
+    }
+
+    @Bean
     fun exceptionsTopic(): NewTopic {
         return NewTopic("exceptions", 1, 1)
     }

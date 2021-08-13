@@ -44,6 +44,8 @@ dependencies {
     runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
     implementation("com.google.code.gson:gson:2.8.5")
 
+    implementation("org.springframework.kafka:spring-kafka")
+
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 

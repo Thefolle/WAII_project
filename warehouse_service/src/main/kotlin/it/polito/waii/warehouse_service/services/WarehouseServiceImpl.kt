@@ -1,15 +1,26 @@
 package it.polito.waii.warehouse_service.services
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import it.polito.waii.warehouse_service.dtos.*
 import it.polito.waii.warehouse_service.entities.*
+import it.polito.waii.warehouse_service.exceptions.UnsatisfiableRequestException
 import it.polito.waii.warehouse_service.repositories.ProductRepository
 import it.polito.waii.warehouse_service.repositories.ProductWarehouseRepository
 import it.polito.waii.warehouse_service.repositories.WarehouseRepository
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpStatus
+import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
+import org.springframework.kafka.requestreply.RequestReplyTypedMessageFuture
+import org.springframework.kafka.support.KafkaHeaders
+import org.springframework.kafka.support.KafkaNull
+import org.springframework.messaging.support.MessageBuilder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
+import java.nio.ByteBuffer
+import java.nio.charset.Charset
+import java.time.Duration
 
 @Service
 @Transactional
@@ -23,6 +34,12 @@ class WarehouseServiceImpl : WarehouseService {
 
     @Autowired
     lateinit var productWarehouseRepository: ProductWarehouseRepository
+
+    @Autowired
+    lateinit var getAllAdminEmailsReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Void, Set<String>>
+
+    @Autowired
+    lateinit var mailService: MailService
 
 
     private fun getProductWarehouseById(productId: Long, warehouseId: Long): ProductWarehouse{
@@ -147,10 +164,9 @@ class WarehouseServiceImpl : WarehouseService {
             HttpStatus.NOT_FOUND,
             "No warehouse with id $warehouseId exists."
         )
-        println(-1)
+
         val compKey = CompositeKey(updateQuantityDTO.productId, warehouseId)
         val productWarehouseOptional = productWarehouseRepository.findByCompositeKey(compKey)
-        println(-2)
         // if I need to add the quantity...
         if (updateQuantityDTO.action == Action.ADD){
             if (productWarehouseOptional.isEmpty){
@@ -176,29 +192,67 @@ class WarehouseServiceImpl : WarehouseService {
 
         // if I need to sub the quantity...
         else{
-            println(1)
             //...and if I don't have the relation, I just throw an exception
             if (productWarehouseOptional.isEmpty) throw ResponseStatusException(
                 HttpStatus.NOT_FOUND,
                 "No product with id ${updateQuantityDTO.productId} exists inside warehouse with id $warehouseId."
             )
-            println(2)
             //else I simply sub the specified quantity and check the alarm level
             val productWarehouse = productWarehouseOptional.get()
-            println(3)
             if (productWarehouse.quantity < updateQuantityDTO.quantity) throw ResponseStatusException(
                 HttpStatus.FORBIDDEN,
                 "Not enough products!"
             )
-            println("reducing quantity...")
 
             productWarehouse.quantity -= updateQuantityDTO.quantity
             if (productWarehouse.quantity < productWarehouse.alarmLevel){
-                //Todo: send email to admins
+                sendAlarmLevelReachedByEmail(
+                    productWarehouse.alarmLevel,
+                    productWarehouse.product.name,
+                    productWarehouse.product.id!!
+                )
             }
         }
 
          return productWarehouseRepository.findById(compKey).get().toDTO()
+    }
+
+    private fun getAllAdminEmails(): Set<String> {
+        val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
+        replyPartition.putInt(0)
+        val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
+        correlationId.putInt(0)
+
+        val objectMapper = ObjectMapper()
+        val type = objectMapper.typeFactory.constructParametricType(Set::class.java, String::class.java)
+
+        val future =
+            getAllAdminEmailsReplyingKafkaTemplate
+                .sendAndReceive(
+                    MessageBuilder
+                        .withPayload(
+                            KafkaNull.INSTANCE
+                        )
+                        .setHeader(KafkaHeaders.TOPIC, "catalogue_service_requests")
+                        .setHeader(KafkaHeaders.PARTITION_ID, 0)
+                        .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
+                        .setHeader(KafkaHeaders.REPLY_TOPIC, "catalogue_service_responses")
+                        .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
+                        .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
+                        .build(),
+                    Duration.ofSeconds(15),
+                    ParameterizedTypeReference.forType<Set<String>>(type)
+                )
+
+        var result: Set<String>
+        try {
+            result = future.get().payload
+        } catch (exception: Exception) {
+            throw UnsatisfiableRequestException("The emails couldn't be retrieved due to some" +
+                    " failure of the following service: catalogue_service")
+        }
+
+        return result
     }
 
     override fun updateProductQuantities(updateQuantitiesDTO: Set<UpdateQuantityDtoKafka>) {
@@ -211,11 +265,35 @@ class WarehouseServiceImpl : WarehouseService {
             }
     }
 
+    private fun sendAlarmLevelReachedByEmail(alarmLevel: Long, productName: String, productId: Long) {
+        try {
+            val emails = getAllAdminEmails()
+            println("Emails: $emails")
+            emails.forEach {
+                mailService
+                    .sendMessage(
+                        it,
+                        "Alarm level reached",
+                        "The alarm level of $alarmLevel" +
+                                " for product $productName" +
+                                " with id $productId" +
+                                " has been reached."
+                    )
+            }
+        } catch (exception: Exception) {
+            println(exception.message)
+        }
+    }
+
     override fun updateProductAlarmLevel(warehouseId: Long, productId: Long, newAlarmLevel: Long): ProductWarehouseDTO {
         val productWarehouse = getProductWarehouseById(productId, warehouseId)
         productWarehouse.alarmLevel = newAlarmLevel
         if (productWarehouse.quantity < productWarehouse.alarmLevel){
-            //Todo: send email to admins
+            sendAlarmLevelReachedByEmail(
+                productWarehouse.alarmLevel,
+                productWarehouse.product.name,
+                productWarehouse.product.id!!
+            )
         }
 
         return productWarehouse.toDTO()

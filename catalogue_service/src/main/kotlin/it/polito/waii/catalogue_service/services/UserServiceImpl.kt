@@ -170,4 +170,18 @@ class UserServiceImpl(val userRepository: UserRepository,
 
         return user.toDTO()
     }
+
+    override fun getAllAdminEmails(): Set<String> {
+        return userRepository
+            .findAll()
+            .filter {
+                it
+                    .isAdmin
+            }
+            .map {
+                it
+                    .email
+            }
+            .toSet()
+    }
 }
