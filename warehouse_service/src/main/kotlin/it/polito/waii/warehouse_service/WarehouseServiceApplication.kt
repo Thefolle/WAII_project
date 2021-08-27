@@ -72,7 +72,7 @@ class WarehouseServiceApplication {
                 warehouseId,
                 UpdateQuantityDTO(
                     productId,
-                    4,
+                    15,
                     Action.ADD
                 )
             )
@@ -144,11 +144,11 @@ class WarehouseServiceApplication {
 
             // link products and warehouse
             val ckey1 = CompositeKey(p1.id!!, w1.id!!)
-            val pw1 = ProductWarehouse(ckey1, p1, w1, 5, 3)
+            val pw1 = ProductWarehouse(ckey1, p1, w1, 30, 3)
             productWarehouseRepository.save(pw1)
 
             val ckey2 = CompositeKey(p2.id!!, w1.id!!)
-            val pw2 = ProductWarehouse(ckey2, p2, w1, 15, 7)
+            val pw2 = ProductWarehouse(ckey2, p2, w1, 35, 7)
             productWarehouseRepository.save(pw2)
 
             val ckey3 = CompositeKey(p3.id!!, w3.id!!)

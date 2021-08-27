@@ -43,7 +43,7 @@ class WalletServiceApplication {
         return ApplicationRunner {
             // Create wallets
             // User Sofia has 2 wallets
-            val w1 = Wallet(null, "Sofia",50F)
+            val w1 = Wallet(null, "Sofia",130F)
             walletRepository.save(w1)
             val w2 = Wallet(null, "Lucas", 17F)
             walletRepository.save(w2)

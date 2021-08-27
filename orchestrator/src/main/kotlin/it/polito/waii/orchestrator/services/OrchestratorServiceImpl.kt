@@ -21,7 +21,7 @@ class OrchestratorServiceImpl(
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
         replyPartition.putInt(0)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
-        correlationId.putInt(0)
+        correlationId.putInt(2)
 
         return warehouseReplyingKafkaTemplate
             .sendAndReceive(
@@ -40,11 +40,11 @@ class OrchestratorServiceImpl(
             )
     }
 
-    override fun checkWallet(transactionDto: TransactionDto): RequestReplyMessageFuture<String, TransactionDto> {
+    override fun checkWallet(transactionDto: TransactionDto, username: String, roles: String): RequestReplyMessageFuture<String, TransactionDto> {
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
         replyPartition.putInt(0)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
-        correlationId.putInt(1)
+        correlationId.putInt(3)
 
         return walletReplyingKafkaTemplate
             .sendAndReceive(
@@ -58,6 +58,8 @@ class OrchestratorServiceImpl(
                     .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
                     .setHeader(KafkaHeaders.REPLY_TOPIC, "wallet_service_responses")
                     .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
+                    .setHeader("username", username)
+                    .setHeader("roles", roles)
                     .build(),
                 Duration.ofSeconds(15)
             )

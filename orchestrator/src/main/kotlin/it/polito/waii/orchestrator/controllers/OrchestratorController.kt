@@ -8,6 +8,7 @@ import it.polito.waii.orchestrator.exceptions.UnsatisfiableRequestException
 import it.polito.waii.orchestrator.services.OrchestratorService
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.annotation.TopicPartition
+import org.springframework.messaging.handler.annotation.Header
 import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.stereotype.Component
 
@@ -19,7 +20,7 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
         containerFactory = "createOrderConcurrentKafkaListenerContainerFactory",
         topicPartitions = [TopicPartition(topic = "orchestrator_requests", partitions = ["0"])]
     )
-    fun createOrder(orderDtoOrchestrator: OrderDtoOrchestrator): Long {
+    fun createOrder(orderDtoOrchestrator: OrderDtoOrchestrator, @Header("username") username: String, @Header("roles") roles: String): Long {
 
         // warehouse check
         val updateQuantities =
@@ -29,7 +30,9 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                         orderDtoOrchestrator.deliveries[it]!!.warehouseId,
                         it,
                         orderDtoOrchestrator.quantities[it]!!,
-                        Action.REMOVE
+                        // quantities are increased or decreased depending on whether a customer
+                        // is issuing an order or he is cancelling it
+                        if (orderDtoOrchestrator.isIssuingOrCancelling) Action.REMOVE else Action.ADD
                     )
                 }
                 .toSet()
@@ -47,7 +50,7 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                 orderDtoOrchestrator.walletId,
                 orderDtoOrchestrator.total,
                 null,
-                false,
+                !orderDtoOrchestrator.isIssuingOrCancelling,
                 // for now this is null: modify order_service to first save the order, as Saga requires
                 orderDtoOrchestrator.id,
                 null
@@ -56,7 +59,9 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
         val walletFuture =
             orchestratorService
                 .checkWallet(
-                    transactionDto
+                    transactionDto,
+                    username,
+                    roles
                 )
 
         // check eventual failures
@@ -79,7 +84,7 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                 .checkWarehouse(
                     updateQuantities
                         .map {
-                            it.action = Action.ADD
+                            it.action = if (orderDtoOrchestrator.isIssuingOrCancelling) Action.ADD else Action.REMOVE
                             it
                         }
                         .toSet()
@@ -90,8 +95,10 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                 .checkWallet(
                     transactionDto
                         .also {
-                            it.isRech = true
-                        }
+                            it.isRech = orderDtoOrchestrator.isIssuingOrCancelling
+                        },
+                    username,
+                    roles
                 )
         }
 

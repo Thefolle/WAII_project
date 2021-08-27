@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.annotation.TopicPartition
 import org.springframework.kafka.support.KafkaNull
+import org.springframework.messaging.handler.annotation.Header
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.stereotype.Component
@@ -18,10 +19,7 @@ class OrderController {
     @Autowired
     lateinit var orderService: OrderService
 
-    // Methods are incomplete for two reasons:
-    // - no communication with the other services
-
-    /* Design
+    /*
 
     There are right but conflicting design patterns:
     a) All listeners should subscribe to the same partition so as to preserve order of messages;
@@ -41,11 +39,13 @@ class OrderController {
         containerFactory = "createOrderConcurrentKafkaListenerContainerFactory",
         topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["0"])]
     )
-    fun createOrder(orderDto: OrderDto): Long =
+    fun createOrder(orderDto: OrderDto, @Header("username") username: String, @Header("roles") roles: String): Long =
         runBlocking {
             orderService
                 .createOrder(
-                    orderDto
+                    orderDto,
+                    username,
+                    roles
                 )
         }
 
@@ -60,9 +60,6 @@ class OrderController {
             .getOrders()
             .toIterable()
             .toSet()
-            .apply {
-                println(this)
-            }
     }
 
     @SendTo("order_service_responses")
@@ -80,10 +77,14 @@ class OrderController {
         containerFactory = "updateOrderConcurrentKafkaListenerContainerFactory",
         topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["3"])]
     )
-    fun updateOrder(orderDto: PatchOrderDto) {
+    fun updateOrder(orderDto: PatchOrderDto, @Header("username") username: String, @Header("roles") roles: String) {
         runBlocking {
             orderService
-                .updateOrder(orderDto)
+                .updateOrder(
+                    orderDto,
+                    username,
+                    roles
+                )
         }
     }
 
@@ -91,10 +92,15 @@ class OrderController {
         containerFactory = "deleteOrderConcurrentKafkaListenerContainerFactory",
         topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["4"])]
     )
-    fun deleteOrderById(id: Long) {
-        orderService
-            .deleteOrderById(id)
-            .block()
+    fun deleteOrderById(id: Long, @Header("username") username: String, @Header("roles") roles: String) {
+        runBlocking {
+            orderService
+                .deleteOrderById(
+                    id,
+                    username,
+                    roles
+                )
+        }
     }
 
 }

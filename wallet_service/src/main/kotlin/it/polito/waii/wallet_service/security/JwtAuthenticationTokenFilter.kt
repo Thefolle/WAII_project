@@ -24,7 +24,6 @@ class JwtAuthenticationTokenFilter(val jwtUtils: JwtUtils): OncePerRequestFilter
             if (jwtUtils.validateJwtToken(token)) {
                 println("Sono nel filter JWT - Wallet")
                 val userDetailsDTO = jwtUtils.getDetailsFromJwtToken(token)
-                println(userDetailsDTO.toJson())
                 val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(userDetailsDTO, null, userDetailsDTO.authorities)
                 usernamePasswordAuthenticationToken.details = WebAuthenticationDetailsSource().buildDetails(request)
                 val authentication : Authentication = usernamePasswordAuthenticationToken

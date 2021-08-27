@@ -14,8 +14,9 @@ class OrderDto(
     val deliveries: Map<Long, DeliveryDto>,
     val quantities: Map<Long, Long>,
     val total: Float,
+    var isIssuingOrCancelling: Boolean?,
     val status: OrderStatus? = null
 ) {
     // no-arg constructor for Jackson
-    constructor() : this(null, 0, 0, mapOf(), mapOf(), 0f, null)
+    constructor() : this(null, 0, 0, mapOf(), mapOf(), 0f, false, null)
 }

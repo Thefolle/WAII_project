@@ -17,7 +17,7 @@ data class Order(
     val wallet: Wallet,
     val deliveries: Set<Delivery>,
     var total: Float,
-    val status: OrderStatus,
+    var status: OrderStatus,
 ) {
 
 
@@ -28,6 +28,7 @@ data class Order(
         deliveries.associate { it.product.id!! to it.toDto() },
         deliveries.associate { it.product.id!! to it.quantity },
         total,
+        false,
         status
     )
 

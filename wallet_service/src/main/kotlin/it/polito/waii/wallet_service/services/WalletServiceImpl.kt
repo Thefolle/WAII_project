@@ -4,8 +4,10 @@ import it.polito.waii.wallet_service.dtos.TransactionDTO
 import it.polito.waii.wallet_service.dtos.UserDTO
 import it.polito.waii.wallet_service.dtos.WalletDTO
 import it.polito.waii.wallet_service.entities.Recharge
+import it.polito.waii.wallet_service.entities.Rolename
 import it.polito.waii.wallet_service.entities.Transaction
 import it.polito.waii.wallet_service.entities.Wallet
+import it.polito.waii.wallet_service.exceptions.UnsatisfiableRequestException
 import it.polito.waii.wallet_service.repositories.RechargeRepository
 import it.polito.waii.wallet_service.repositories.TransactionRepository
 import it.polito.waii.wallet_service.repositories.WalletRepository
@@ -32,7 +34,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
 
     private fun getUserRole(): Boolean {
         val principal = SecurityContextHolder.getContext().authentication.principal
-        return if(principal is UserDTO){
+        return if (principal is UserDTO) {
             principal.isAdmin
         } else {
             false
@@ -46,29 +48,34 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    override fun doRecharge(transaction: TransactionDTO): TransactionDTO {
+    override fun doRecharge(transaction: TransactionDTO) = doRechargeInner(transaction)
+
+    override fun doRecharge(transaction: TransactionDTO, roles: String): TransactionDTO {
+        if (roles.contains("ROLE_ADMIN")) return doRechargeInner(transaction)
+        else throw UnsatisfiableRequestException("The user cannot perform the recharge because his privileges are lower than admin.")
+    }
+
+    private fun doRechargeInner(transaction: TransactionDTO): TransactionDTO {
         val wallet = getWalletById(transaction.wid)
         wallet.addBalance(transaction.transactedMoneyAmount)
         val recharge = Recharge(rid = null,
-                                rechargedMoneyAmount = transaction.transactedMoneyAmount,
-                                timestamp = LocalDateTime.now())
+            rechargedMoneyAmount = transaction.transactedMoneyAmount,
+            timestamp = LocalDateTime.now())
         val saved = rechargeRepository.save(recharge)
         val res = Transaction(tid = null,
-                              wallet = wallet,
-                              transactedMoneyAmount = transaction.transactedMoneyAmount,
-                              timestamp = LocalDateTime.now(),
-                              isRech = true,
-                              orderId = null,
-                              recharge = saved)
+            wallet = wallet,
+            transactedMoneyAmount = transaction.transactedMoneyAmount,
+            timestamp = LocalDateTime.now(),
+            isRech = true,
+            orderId = null,
+            recharge = saved)
         transactionRepository.save(res)
         return res.toDto()
     }
 
-    @Transactional
-    override fun doCharge(transaction: TransactionDTO): TransactionDTO {
+    private fun doChargeInner(transaction: TransactionDTO, username: String): TransactionDTO {
         val wallet = getWalletById(transaction.wid)
         //check if I am the owner of the wallet
-        val username = getUsername()
         if (username != wallet.ownerUsername) throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this wallet!")
         //check if I have enough money
         if (wallet.balance < transaction.transactedMoneyAmount) throw ResponseStatusException(HttpStatus.FORBIDDEN, "Not enough money!")
@@ -85,6 +92,9 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
             .save(res)
             .toDto()
     }
+
+    override fun doCharge(transaction: TransactionDTO) = doChargeInner(transaction, getUsername())
+    override fun doCharge(transaction: TransactionDTO, username: String) = doChargeInner(transaction, username)
 
     override fun getTransaction(walletId: Long, transactionId: Long): TransactionDTO {
         val transactionOptional = transactionRepository.findById(transactionId)

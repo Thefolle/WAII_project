@@ -7,6 +7,6 @@ import org.springframework.kafka.requestreply.RequestReplyMessageFuture
 interface OrchestratorService {
 
     fun checkWarehouse(updateQuantitiesDto: Set<UpdateQuantityDtoKafka>): RequestReplyMessageFuture<String, Set<UpdateQuantityDtoKafka>>
-    fun checkWallet(transactionDto: TransactionDto): RequestReplyMessageFuture<String, TransactionDto>
+    fun checkWallet(transactionDto: TransactionDto, username: String, roles: String): RequestReplyMessageFuture<String, TransactionDto>
 
 }

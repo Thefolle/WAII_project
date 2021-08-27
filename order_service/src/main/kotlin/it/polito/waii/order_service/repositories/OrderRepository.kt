@@ -57,10 +57,10 @@ interface OrderRepository: ReactiveNeo4jRepository<Order, Long> {
     fun deleteWalletIfIsolated(@Param("id") id: Long): Mono<Void>
 
     @Query(
-        "match (d {id: \$deliveryId})-[r]-(w:Wallet {id: \$walletId})\n" +
+        "match (o:Order {id: \$orderId})-[r]-(w:Wallet {id: \$walletId})\n" +
                 "delete r"
     )
-    fun detachWallet(@Param("deliveryId") deliveryId: Long, @Param("walletId") walletId: Long): Mono<Void>
+    fun detachWallet(@Param("orderId") orderId: Long, @Param("walletId") walletId: Long): Mono<Void>
 
 
     @Query(
