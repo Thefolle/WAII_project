@@ -18,7 +18,7 @@ interface OrderRepository: ReactiveNeo4jRepository<Order, Long> {
     fun deleteWarehouseIfIsolated(@Param("id") id: Long): Mono<Void>
 
     @Query(
-        "match (d {id: \$deliveryId})-[r]-(w:Warehouse {id: \$warehouseId})\n" +
+        "match (d:Delivery {id: \$deliveryId})-[r]-(w:Warehouse {id: \$warehouseId})\n" +
                 "delete r"
     )
     fun detachWarehouse(@Param("deliveryId") deliveryId: Long, @Param("warehouseId") warehouseId: Long): Mono<Void>
@@ -31,7 +31,7 @@ interface OrderRepository: ReactiveNeo4jRepository<Order, Long> {
     fun deleteProductIfIsolated(@Param("id") id: Long): Mono<Void>
 
     @Query(
-        "match (d {id: \$deliveryId})-[r]-(p:Product {id: \$productId})\n" +
+        "match (d:Delivery {id: \$deliveryId})-[r]-(p:Product {id: \$productId})\n" +
                 "delete r"
     )
     fun detachProduct(@Param("deliveryId") deliveryId: Long, @Param("productId") productId: Long): Mono<Void>
@@ -44,10 +44,10 @@ interface OrderRepository: ReactiveNeo4jRepository<Order, Long> {
     fun deleteCustomerIfIsolated(@Param("id") id: Long): Mono<Void>
 
     @Query(
-        "match (d {id: \$deliveryId})-[r]-(c:Customer {id: \$customerId})\n" +
+        "match (o:Order {id: \$orderId})-[r]-(c:Customer {id: \$customerId})\n" +
                 "delete r"
     )
-    fun detachCustomer(@Param("deliveryId") deliveryId: Long, @Param("customerId") customerId: Long): Mono<Void>
+    fun detachCustomer(@Param("orderId") orderId: Long, @Param("customerId") customerId: Long): Mono<Void>
 
     @Query(
         "match (w:Wallet {id: \$id})\n" +
@@ -57,10 +57,10 @@ interface OrderRepository: ReactiveNeo4jRepository<Order, Long> {
     fun deleteWalletIfIsolated(@Param("id") id: Long): Mono<Void>
 
     @Query(
-        "match (d {id: \$deliveryId})-[r]-(w:Wallet {id: \$walletId})\n" +
+        "match (o:Order {id: \$orderId})-[r]-(w:Wallet {id: \$walletId})\n" +
                 "delete r"
     )
-    fun detachWallet(@Param("deliveryId") deliveryId: Long, @Param("walletId") walletId: Long): Mono<Void>
+    fun detachWallet(@Param("orderId") orderId: Long, @Param("walletId") walletId: Long): Mono<Void>
 
 
     @Query(
@@ -96,5 +96,7 @@ interface OrderRepository: ReactiveNeo4jRepository<Order, Long> {
                 "delete warehouse"
     )
     override fun deleteById(@Param("id") id: Long): Mono<Void>
+
+    override fun findById(id: Long): Mono<Order>
 
 }

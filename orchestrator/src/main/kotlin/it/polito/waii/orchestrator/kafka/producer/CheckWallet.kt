@@ -80,17 +80,11 @@ class CheckWallet {
     }
 
     @Bean
-    fun checkWalletConcurrentKafkaListenerContainerFactory(@Qualifier("checkWalletConsumerFactory") consumerFactory: ConsumerFactory<String, Long>, messageConverter: StringJsonMessageConverter, replyTemplate: KafkaTemplate<String, Long>, @Qualifier("checkWalletExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Long> {
+    fun checkWalletConcurrentKafkaListenerContainerFactory(@Qualifier("checkWalletConsumerFactory") consumerFactory: ConsumerFactory<String, Long>, messageConverter: StringJsonMessageConverter, @Qualifier("checkWalletExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Long> {
         var containerFactory = ConcurrentKafkaListenerContainerFactory<String, Long>()
         containerFactory.containerProperties.setGroupId("orchestrator_group_id_1")
         containerFactory.consumerFactory = consumerFactory
         containerFactory.setMessageConverter(messageConverter)
-        containerFactory.setReplyTemplate(replyTemplate)
-        containerFactory.setRetryTemplate(
-            RetryTemplateBuilder()
-                .maxAttempts(1)
-                .build()
-        )
 
         // The backoff controls how many times Kafka will attempt to send the same request on a controller;
         // in this case, no additional attempts are allowed

@@ -18,4 +18,15 @@ class OrderDto(
 ) {
     // no-arg constructor for Jackson
     constructor() : this(null, 0, 0, mapOf(), mapOf(), 0f, null)
+
+    fun toOrderDtoOrchestrator(isIssuingOrCancelling: Boolean) = OrderDtoOrchestrator(
+        id,
+        buyerId,
+        walletId,
+        deliveries,
+        quantities,
+        total,
+        isIssuingOrCancelling,
+        status
+    )
 }

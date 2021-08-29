@@ -17,7 +17,7 @@ data class Order(
     val wallet: Wallet,
     val deliveries: Set<Delivery>,
     var total: Float,
-    val status: OrderStatus,
+    var status: OrderStatus,
 ) {
 
 

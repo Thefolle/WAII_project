@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import it.polito.waii.order_service.dtos.DeliveryDto
 import it.polito.waii.order_service.dtos.OrderDto
 import it.polito.waii.order_service.dtos.PatchOrderDto
+import it.polito.waii.order_service.dtos.UserDTO
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.ParameterizedTypeReference
@@ -13,11 +16,14 @@ import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.kafka.support.KafkaNull
 import org.springframework.messaging.support.MessageBuilder
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.time.Duration
+import kotlin.coroutines.coroutineContext
 
 @RestController
 class TestController {
@@ -39,7 +45,11 @@ class TestController {
     lateinit var stringLongVoidReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Long, Void>
 
     @PostMapping
-    fun createOrder(): Long {
+    suspend fun createOrder(): Long {
+        val principal = ReactiveSecurityContextHolder.getContext().awaitSingle().authentication.principal
+        val username = if (principal is UserDTO) principal.username else principal.toString()
+        val roles = if (principal is UserDTO) principal.authorities.joinToString(",") { it.authority } else principal.toString()
+
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
         replyPartition.putInt(0)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
@@ -75,6 +85,8 @@ class TestController {
                     )
                     .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
                     .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
+                    .setHeader("username", username)
+                    .setHeader("roles", roles)
                     .build(),
                 Duration.ofSeconds(15),
                 ParameterizedTypeReference.forType(Long::class.java)
@@ -143,6 +155,7 @@ class TestController {
                     .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
                     .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
                     .build(),
+                Duration.ofSeconds(15),
                 ParameterizedTypeReference.forType<OrderDto>(OrderDto::class.java)
             )
             .get()
@@ -150,7 +163,10 @@ class TestController {
     }
 
     @PatchMapping("/{id}", consumes = [MediaType.APPLICATION_JSON_VALUE])
-    fun updateOrder(@PathVariable("id") id: Long, @RequestBody orderDto: PatchOrderDto) {
+    suspend fun updateOrder(@PathVariable("id") id: Long, @RequestBody orderDto: PatchOrderDto) {
+        val principal = ReactiveSecurityContextHolder.getContext().awaitSingle().authentication.principal
+        val username = if (principal is UserDTO) principal.username else principal.toString()
+        val roles = if (principal is UserDTO) principal.authorities.joinToString(",") { it.authority } else principal.toString()
 
         stringPatchOrderDtoVoidReplyingKafkaTemplate
             .send(MessageBuilder
@@ -160,13 +176,18 @@ class TestController {
                 .setHeader(KafkaHeaders.TOPIC, "order_service_requests")
                 .setHeader(KafkaHeaders.PARTITION_ID, 3)
                 .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
+                .setHeader("username", username)
+                .setHeader("roles", roles)
                 .build()
             )
             .get()
     }
 
     @DeleteMapping("/{id}")
-    fun deleteOrderById(@PathVariable("id") id: Long) {
+    suspend fun deleteOrderById(@PathVariable("id") id: Long) {
+        val principal = ReactiveSecurityContextHolder.getContext().awaitSingle().authentication.principal
+        val username = if (principal is UserDTO) principal.username else principal.toString()
+        val roles = if (principal is UserDTO) principal.authorities.joinToString(",") { it.authority } else principal.toString()
 
         stringLongVoidReplyingKafkaTemplate
             .send(MessageBuilder
@@ -176,6 +197,8 @@ class TestController {
                 .setHeader(KafkaHeaders.TOPIC, "order_service_requests")
                 .setHeader(KafkaHeaders.PARTITION_ID, 4)
                 .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
+                .setHeader("username", username)
+                .setHeader("roles", roles)
                 .build()
             )
             .get()

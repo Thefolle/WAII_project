@@ -159,11 +159,19 @@ class WarehouseServiceImpl : WarehouseService {
         return productWarehouseRepository.findAll().map { ProductQuantityDTO(it.product.name, it.quantity) }
     }
 
-    override fun updateProductQuantity(warehouseId: Long, updateQuantityDTO: UpdateQuantityDTO): ProductWarehouseDTO {
+    override fun updateProductQuantity(warehouseId: Long, updateQuantityDTO: UpdateQuantityDTO): Float {
+
         if (warehouseRepository.findById(warehouseId).isEmpty) throw ResponseStatusException(
             HttpStatus.NOT_FOUND,
             "No warehouse with id $warehouseId exists."
         )
+
+        val productOptional = productRepository.findById(updateQuantityDTO.productId)
+        if (productOptional.isEmpty) throw ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "No product with id ${updateQuantityDTO.productId} exists."
+        )
+        val product = productOptional.get()
 
         val compKey = CompositeKey(updateQuantityDTO.productId, warehouseId)
         val productWarehouseOptional = productWarehouseRepository.findByCompositeKey(compKey)
@@ -171,12 +179,6 @@ class WarehouseServiceImpl : WarehouseService {
         if (updateQuantityDTO.action == Action.ADD){
             if (productWarehouseOptional.isEmpty){
                 //...and if I don't have the relation, I create a new ProductWarehouse with the specified quantity (if product exists)
-                val productOptional = productRepository.findById(updateQuantityDTO.productId)
-                if (productOptional.isEmpty) throw ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "No product with id ${updateQuantityDTO.productId} exists."
-                )
-                val product = productOptional.get()
                 val warehouse = warehouseRepository.findById(warehouseId).get()
                 // I Chose 10 as a default alarm level (can be modified with another API)
                 val newProductWarehouse = ProductWarehouse(compKey, product, warehouse, updateQuantityDTO.quantity, 10)
@@ -214,7 +216,7 @@ class WarehouseServiceImpl : WarehouseService {
             }
         }
 
-         return productWarehouseRepository.findById(compKey).get().toDTO()
+         return product.price * updateQuantityDTO.quantity
     }
 
     private fun getAllAdminEmails(): Set<String> {
@@ -255,14 +257,15 @@ class WarehouseServiceImpl : WarehouseService {
         return result
     }
 
-    override fun updateProductQuantities(updateQuantitiesDTO: Set<UpdateQuantityDtoKafka>) {
-        updateQuantitiesDTO
-            .forEach {
+    override fun updateProductQuantities(updateQuantitiesDTO: Set<UpdateQuantityDtoKafka>): Float {
+        return updateQuantitiesDTO
+            .sumOf {
                 updateProductQuantity(
                     it.warehouseId,
                     it.toUpdateQuantityDto()
-                )
+                ).toDouble()
             }
+            .toFloat()
     }
 
     private fun sendAlarmLevelReachedByEmail(alarmLevel: Long, productName: String, productId: Long) {

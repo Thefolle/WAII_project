@@ -36,7 +36,7 @@ class CreateOrder {
     }
 
     @Bean
-    fun createOrderConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderConsumerFactory") consumerFactory: ConsumerFactory<String, OrderDto>, @Qualifier("createOrderKafkaTemplate") kafkaTemplate: KafkaTemplate<String, Long>, exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, OrderDto> {
+    fun createOrderConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderConsumerFactory") consumerFactory: ConsumerFactory<String, OrderDto>, @Qualifier("createOrderKafkaTemplate") kafkaTemplate: KafkaTemplate<String, Long>, @Qualifier("createOrderExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, OrderDto> {
         var concurrentKafkaListenerContainerFactory = ConcurrentKafkaListenerContainerFactory<String, OrderDto>()
         concurrentKafkaListenerContainerFactory.consumerFactory = consumerFactory
         concurrentKafkaListenerContainerFactory.setReplyTemplate(kafkaTemplate)
@@ -81,7 +81,7 @@ class CreateOrder {
     }
 
     @Bean
-    fun createOrderExceptionKafkaTemplate(producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {
+    fun createOrderExceptionKafkaTemplate(@Qualifier("createOrderExceptionProducerFactory") producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {
         return KafkaTemplate(producerFactory)
     }
 

@@ -1,10 +1,11 @@
 package it.polito.waii.orchestrator.services
 
-import it.polito.waii.orchestrator.dtos.Action
 import it.polito.waii.orchestrator.dtos.TransactionDto
 import it.polito.waii.orchestrator.dtos.UpdateQuantityDtoKafka
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.requestreply.RequestReplyMessageFuture
+import org.springframework.kafka.requestreply.RequestReplyTypedMessageFuture
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.messaging.support.MessageBuilder
 import org.springframework.stereotype.Service
@@ -13,15 +14,15 @@ import java.time.Duration
 
 @Service
 class OrchestratorServiceImpl(
-    val warehouseReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Set<UpdateQuantityDtoKafka>, Long>,
+    val warehouseReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Set<UpdateQuantityDtoKafka>, Float>,
     val walletReplyingKafkaTemplate: ReplyingKafkaTemplate<String, TransactionDto, Long>
     ) : OrchestratorService {
 
-    override fun checkWarehouse(updateQuantitiesDto: Set<UpdateQuantityDtoKafka>): RequestReplyMessageFuture<String, Set<UpdateQuantityDtoKafka>> {
+    override fun checkWarehouse(updateQuantitiesDto: Set<UpdateQuantityDtoKafka>): RequestReplyTypedMessageFuture<String, Set<UpdateQuantityDtoKafka>, Float> {
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
         replyPartition.putInt(0)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
-        correlationId.putInt(0)
+        correlationId.putInt(2)
 
         return warehouseReplyingKafkaTemplate
             .sendAndReceive(
@@ -36,15 +37,16 @@ class OrchestratorServiceImpl(
                     .setHeader(KafkaHeaders.REPLY_TOPIC, "warehouse_service_responses")
                     .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
                     .build(),
-                Duration.ofSeconds(15)
+                Duration.ofSeconds(15),
+                ParameterizedTypeReference.forType(Float::class.java)
             )
     }
 
-    override fun checkWallet(transactionDto: TransactionDto): RequestReplyMessageFuture<String, TransactionDto> {
+    override fun checkWallet(transactionDto: TransactionDto, username: String, roles: String): RequestReplyMessageFuture<String, TransactionDto> {
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
         replyPartition.putInt(0)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
-        correlationId.putInt(1)
+        correlationId.putInt(3)
 
         return walletReplyingKafkaTemplate
             .sendAndReceive(
@@ -58,6 +60,8 @@ class OrchestratorServiceImpl(
                     .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
                     .setHeader(KafkaHeaders.REPLY_TOPIC, "wallet_service_responses")
                     .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
+                    .setHeader("username", username)
+                    .setHeader("roles", roles)
                     .build(),
                 Duration.ofSeconds(15)
             )

@@ -1,6 +1,7 @@
 package it.polito.waii.order_service.services
 
 import it.polito.waii.order_service.dtos.OrderDto
+import it.polito.waii.order_service.dtos.OrderDtoOrchestrator
 import it.polito.waii.order_service.dtos.PatchOrderDto
 import it.polito.waii.order_service.entities.*
 import it.polito.waii.order_service.exceptions.UnsatisfiableRequestException
@@ -13,9 +14,11 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.KafkaHeaders
+import org.springframework.messaging.handler.annotation.Header
 import org.springframework.messaging.support.MessageBuilder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Flux
 import java.nio.ByteBuffer
@@ -29,11 +32,11 @@ class OrderServiceImpl : OrderService {
 
     @Autowired
     @Qualifier("createOrderToOrchestratorReplyingKafkaTemplate")
-    lateinit var orderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDto, Long>
+    lateinit var orderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDtoOrchestrator, Float>
 
 
     @Transactional
-    override suspend fun createOrder(orderDto: OrderDto): Long = coroutineScope {
+    override suspend fun createOrder(orderDto: OrderDto, username: String, roles: String): Long = coroutineScope {
 
         // process the request
         val customer = Customer(orderDto.buyerId)
@@ -50,24 +53,20 @@ class OrderServiceImpl : OrderService {
         }
             .toSet()
 
-        val orderId =
-            orderRepository
-                .save(Order(null, customer, wallet, deliveries, orderDto.total, OrderStatus.ISSUED))
-                .map { it.id }
-                .awaitSingle()!!
-
         // request orchestration
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
         replyPartition.putInt(0)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
         correlationId.putInt(0)
 
+        val orderDtoOrchestrator = orderDto.toOrderDtoOrchestrator(true)
+
         val future =
             orderDtoLongReplyingKafkaTemplate
                 .sendAndReceive(
                     MessageBuilder
                         .withPayload(
-                            orderDto
+                            orderDtoOrchestrator
                         )
                         .setHeader(KafkaHeaders.TOPIC, "orchestrator_requests")
                         .setHeader(KafkaHeaders.PARTITION_ID, 0)
@@ -75,21 +74,28 @@ class OrderServiceImpl : OrderService {
                         .setHeader(KafkaHeaders.REPLY_TOPIC, "orchestrator_responses")
                         .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
                         .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
+                        .setHeader("username", username)
+                        .setHeader("roles", roles)
                         .build(),
                     Duration.ofSeconds(15),
-                    ParameterizedTypeReference.forType<Long>(Long::class.java)
+                    ParameterizedTypeReference.forType<Float>(Float::class.java)
                 )
 
+        var totalPrice: Float
         try {
-            future
+            totalPrice = future
                 .get()
+                .payload
         } catch (exception: Exception) {
-            deleteOrderById(orderId)
             throw UnsatisfiableRequestException("The order couldn't be created because" +
                     " the following service didn't reply: orchestrator_service")
         }
 
-        orderId
+        orderRepository
+            .save(Order(null, customer, wallet, deliveries, totalPrice, OrderStatus.ISSUED))
+            .map { it.id }
+            .awaitSingle()!!
+
     }
 
     @Transactional
@@ -109,14 +115,16 @@ class OrderServiceImpl : OrderService {
     }
 
     @Transactional
-    override suspend fun updateOrder(orderDto: PatchOrderDto): Order = coroutineScope {
+    override suspend fun updateOrder(orderDto: PatchOrderDto, username: String, roles: String): Order = coroutineScope {
 
         val oldOrder =
             orderRepository
                 .findById(orderDto.id!!)
                 .awaitSingle()
 
-        val deliveries = orderDto.deliveries?.map {
+        // exploit the delivery id to identify a delivery rather than its product id, so that the user can change the product of an order too
+        // the disadvantage of this solution is that, in case the user wants to modify only the quantity of a product, he has to specify the pertinent delivery
+        var deliveries = orderDto.deliveries?.map {
             val isNew = it.value.id == null
             if (isNew) {
                 Delivery(
@@ -166,7 +174,10 @@ class OrderServiceImpl : OrderService {
         }
             ?.toSet()
 
-        val isCustomerChanged = orderDto.buyerId != oldOrder.buyer.id
+        val untouchedDeliveries = oldOrder.deliveries.filter { oldDelivery -> deliveries?.none { oldDelivery.id == it.id } ?: false }
+        deliveries = deliveries?.plus(untouchedDeliveries)
+
+        val isCustomerChanged = orderDto.buyerId != null
         val oldCustomerId = oldOrder.buyer.id
         val newCustomerId = orderDto.buyerId
         if (isCustomerChanged) {
@@ -178,9 +189,9 @@ class OrderServiceImpl : OrderService {
                 .awaitSingleOrNull()
         }
 
-        val isWalletChanged = orderDto.walletId != oldOrder.wallet.id
-        val oldWalletId = oldOrder.buyer.id
-        val newWalletId = orderDto.buyerId
+        val isWalletChanged = orderDto.walletId != null
+        val oldWalletId = oldOrder.wallet.id
+        val newWalletId = orderDto.walletId
         if (isWalletChanged) {
             orderRepository
                 .detachWallet(orderDto.id, oldWalletId!!)
@@ -190,24 +201,118 @@ class OrderServiceImpl : OrderService {
                 .awaitSingleOrNull()
         }
 
+        if (orderDto.status == OrderStatus.CANCELED && oldOrder.status != OrderStatus.ISSUED) throw UnsatisfiableRequestException("The order cannot be deleted anymore.")
+
+        var newOrder =
+            Order(
+                orderDto.id,
+                Customer(if (isCustomerChanged) newCustomerId else oldCustomerId),
+                Wallet(if (isWalletChanged) newWalletId else oldWalletId),
+                deliveries ?: oldOrder.deliveries,
+                0f, // this value of the total price is temporary and is not stored neither used
+                orderDto.status ?: oldOrder.status
+            )
+
+        if (orderDto.status == OrderStatus.CANCELED || orderDto.status == OrderStatus.FAILED || isWalletChanged || isCustomerChanged || deliveries != null) {
+            // restore wallet and warehouse as before issuing
+            val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
+            replyPartition.putInt(0)
+            val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
+            correlationId.putInt(1)
+
+            val orderToCancel = oldOrder.toDto().toOrderDtoOrchestrator(false)
+
+            // deposit into the old wallet and bring back products into the old warehouse
+            var future =
+                orderDtoLongReplyingKafkaTemplate
+                    .sendAndReceive(
+                        MessageBuilder
+                            .withPayload(
+                                orderToCancel
+                            )
+                            .setHeader(KafkaHeaders.TOPIC, "orchestrator_requests")
+                            .setHeader(KafkaHeaders.PARTITION_ID, 0)
+                            .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
+                            .setHeader(KafkaHeaders.REPLY_TOPIC, "orchestrator_responses")
+                            .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
+                            .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
+                            .setHeader("username", username)
+                            .setHeader("roles", roles)
+                            .build(),
+                        Duration.ofSeconds(15),
+                        ParameterizedTypeReference.forType<Float>(Float::class.java)
+                    )
+
+            try {
+                future
+                    .get()
+            } catch (exception: Exception) {
+                throw UnsatisfiableRequestException("The order couldn't be updated because" +
+                        " the following service didn't reply: orchestrator_service")
+            }
+
+
+            val orderToIssue = newOrder.toDto().toOrderDtoOrchestrator(true)
+            // withdraw from the new wallet and take products from the new warehouse
+            future =
+                orderDtoLongReplyingKafkaTemplate
+                    .sendAndReceive(
+                        MessageBuilder
+                            .withPayload(
+                                orderToIssue
+                            )
+                            .setHeader(KafkaHeaders.TOPIC, "orchestrator_requests")
+                            .setHeader(KafkaHeaders.PARTITION_ID, 0)
+                            .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
+                            .setHeader(KafkaHeaders.REPLY_TOPIC, "orchestrator_responses")
+                            .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
+                            .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
+                            .setHeader("username", username)
+                            .setHeader("roles", roles)
+                            .build(),
+                        Duration.ofSeconds(15),
+                        ParameterizedTypeReference.forType(Float::class.java)
+                    )
+
+            try {
+                newOrder.total =
+                    future
+                        .get()
+                        .payload
+            } catch (exception: Exception) {
+                throw UnsatisfiableRequestException("The order couldn't be updated because" +
+                        " the following service didn't reply: orchestrator_service")
+            }
+
+        }
+
         orderRepository
             .save(
-                Order(
-                    orderDto.id,
-                    Customer(if (isCustomerChanged) newCustomerId else oldCustomerId),
-                    Wallet(if (isWalletChanged) newWalletId else oldWalletId),
-                    deliveries ?: oldOrder.deliveries,
-                    orderDto.total ?: oldOrder.total,
-                    orderDto.status ?: oldOrder.status
-                )
+                newOrder
             )
             .awaitSingle()
     }
 
     @Transactional
-    override fun deleteOrderById(id: Long): Mono<Void> {
-        return orderRepository
-            .deleteById(id)
+    override suspend fun deleteOrderById(id: Long, username: String, roles: String): Unit = coroutineScope {
+
+        updateOrder(
+            PatchOrderDto(
+                id,
+                null,
+                null,
+                null,
+                null,
+                OrderStatus.CANCELED
+            ),
+            username,
+            roles
+        )
+
+//        Alternatively, delete the order from the db
+//        orderRepository
+//            .deleteById(id)
+//            .awaitSingle()
     }
 
 }

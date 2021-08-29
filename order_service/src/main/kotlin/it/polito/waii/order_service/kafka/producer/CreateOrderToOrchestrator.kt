@@ -1,10 +1,11 @@
 package it.polito.waii.order_service.kafka.producer
 
-import it.polito.waii.order_service.dtos.OrderDto
+import it.polito.waii.order_service.dtos.OrderDtoOrchestrator
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.SerializationException
+import org.apache.kafka.common.serialization.FloatDeserializer
 import org.apache.kafka.common.serialization.LongDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
@@ -27,7 +28,7 @@ import org.springframework.retry.support.RetryTemplateBuilder
 class CreateOrderToOrchestrator {
 
     @Bean
-    fun createOrderToOrchestratorProducerFactory(): ProducerFactory<String, OrderDto> {
+    fun createOrderToOrchestratorProducerFactory(): ProducerFactory<String, OrderDtoOrchestrator> {
         var config = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
@@ -38,14 +39,14 @@ class CreateOrderToOrchestrator {
     }
 
     @Bean
-    fun createOrderToOrchestratorReplyingKafkaTemplate(@Qualifier("createOrderToOrchestratorProducerFactory") producerFactory: ProducerFactory<String, OrderDto>, @Qualifier("createOrderToOrchestratorConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, OrderDto, Long> {
+    fun createOrderToOrchestratorReplyingKafkaTemplate(@Qualifier("createOrderToOrchestratorProducerFactory") producerFactory: ProducerFactory<String, OrderDtoOrchestrator>, @Qualifier("createOrderToOrchestratorConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Float>): ReplyingKafkaTemplate<String, OrderDtoOrchestrator, Float> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
         return replyingKafkaTemplate
     }
 
     @Bean
-    fun createOrderToOrchestratorConcurrentMessageListenerContainer(@Qualifier("createOrderToOrchestratorConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, Long>): ConcurrentMessageListenerContainer<String, Long> {
+    fun createOrderToOrchestratorConcurrentMessageListenerContainer(@Qualifier("createOrderToOrchestratorConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, Float>): ConcurrentMessageListenerContainer<String, Float> {
         var container = containerFactory.createContainer("orchestrator_responses")
         container.containerProperties.setGroupId("outer_service_group_id")
 
@@ -62,8 +63,8 @@ class CreateOrderToOrchestrator {
     }
 
     @Bean
-    fun createOrderToOrchestratorConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderToOrchestratorConsumerFactory") consumerFactory: ConsumerFactory<String, Long>): ConcurrentKafkaListenerContainerFactory<String, Long> {
-        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, Long>()
+    fun createOrderToOrchestratorConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderToOrchestratorConsumerFactory") consumerFactory: ConsumerFactory<String, Float>): ConcurrentKafkaListenerContainerFactory<String, Float> {
+        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, Float>()
         containerFactory.consumerFactory = consumerFactory
         containerFactory.setRetryTemplate(
             RetryTemplateBuilder()
@@ -75,12 +76,12 @@ class CreateOrderToOrchestrator {
     }
 
     @Bean
-    fun createOrderToOrchestratorConsumerFactory(): ConsumerFactory<String, Long> {
+    fun createOrderToOrchestratorConsumerFactory(): ConsumerFactory<String, Float> {
         var config = mapOf(
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ConsumerConfig.GROUP_ID_CONFIG to "order_service_group_id",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to LongDeserializer::class.java,
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to FloatDeserializer::class.java,
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest"
         )
 
