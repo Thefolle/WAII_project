@@ -18,10 +18,6 @@ class ExceptionController {
     fun handleException(message: ConsumerRecord<Any, Any>) {
         println("Probed exception in the dead-letter topic:")
 
-        val correlationIdBuffer = ByteBuffer.allocate(2 * Int.SIZE_BYTES)
-        correlationIdBuffer.put(message.headers().find { it.key().contentEquals(KafkaHeaders.CORRELATION_ID) }?.value(), 0, 4)
-        val correlationId = correlationIdBuffer.int
-
         message.headers().asIterable()
             .forEach {
                 if (it.key().contentEquals("kafka_replyTopic") ||

@@ -93,7 +93,6 @@ class OrderServiceImpl : OrderService {
             orderRepository
                 .deleteById(orderId)
                 .awaitSingleOrNull()
-            orderId = -1L
             throw UnsatisfiableRequestException("The order couldn't be created because" +
                     " the following service didn't reply: orchestrator_service")
         }
@@ -125,7 +124,9 @@ class OrderServiceImpl : OrderService {
                 .findById(orderDto.id!!)
                 .awaitSingle()
 
-        val deliveries = orderDto.deliveries?.map {
+        // exploit the delivery id to identify a delivery rather than its product id, so that the user can change the product of an order too
+        // the disadvantage of this solution is that, in case the user wants to modify only the quantity of a product, he has to specify the pertinent delivery
+        var deliveries = orderDto.deliveries?.map {
             val isNew = it.value.id == null
             if (isNew) {
                 Delivery(
@@ -175,7 +176,10 @@ class OrderServiceImpl : OrderService {
         }
             ?.toSet()
 
-        val isCustomerChanged = if (orderDto.buyerId != null) orderDto.buyerId != oldOrder.buyer.id else false
+        val untouchedDeliveries = oldOrder.deliveries.filter { oldDelivery -> deliveries?.none { oldDelivery.id == it.id } ?: false }
+        deliveries = deliveries?.plus(untouchedDeliveries)
+
+        val isCustomerChanged = orderDto.buyerId != null
         val oldCustomerId = oldOrder.buyer.id
         val newCustomerId = orderDto.buyerId
         if (isCustomerChanged) {
@@ -187,7 +191,7 @@ class OrderServiceImpl : OrderService {
                 .awaitSingleOrNull()
         }
 
-        val isWalletChanged = if (orderDto.walletId != null) orderDto.walletId != oldOrder.wallet.id else false
+        val isWalletChanged = orderDto.walletId != null
         val oldWalletId = oldOrder.wallet.id
         val newWalletId = orderDto.walletId
         if (isWalletChanged) {
@@ -199,7 +203,7 @@ class OrderServiceImpl : OrderService {
                 .awaitSingleOrNull()
         }
 
-        if (orderDto.status == OrderStatus.CANCELED && oldOrder.status == OrderStatus.ISSUED) throw UnsatisfiableRequestException("The order cannot be deleted anymore.")
+        if (orderDto.status == OrderStatus.CANCELED && oldOrder.status != OrderStatus.ISSUED) throw UnsatisfiableRequestException("The order cannot be deleted anymore.")
 
         val order = orderRepository
             .save(
@@ -213,8 +217,6 @@ class OrderServiceImpl : OrderService {
                 )
             )
             .awaitSingle()
-
-
 
         if (orderDto.status == OrderStatus.CANCELED || orderDto.status == OrderStatus.FAILED || isWalletChanged || isCustomerChanged || deliveries != null || orderDto.total != null) {
             // restore wallet and warehouse as before issuing
@@ -255,6 +257,7 @@ class OrderServiceImpl : OrderService {
                         " the following service didn't reply: orchestrator_service")
             }
 
+
             val orderToIssue = order.toDto()
             orderToIssue.isIssuingOrCancelling = true
             // withdraw from the new wallet and take products from the new warehouse
@@ -275,7 +278,7 @@ class OrderServiceImpl : OrderService {
                             .setHeader("roles", roles)
                             .build(),
                         Duration.ofSeconds(15),
-                        ParameterizedTypeReference.forType<Long>(Long::class.java)
+                        ParameterizedTypeReference.forType(Long::class.java)
                     )
 
             try {

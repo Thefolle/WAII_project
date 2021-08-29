@@ -155,6 +155,7 @@ class TestController {
                     .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
                     .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
                     .build(),
+                Duration.ofSeconds(15),
                 ParameterizedTypeReference.forType<OrderDto>(OrderDto::class.java)
             )
             .get()
