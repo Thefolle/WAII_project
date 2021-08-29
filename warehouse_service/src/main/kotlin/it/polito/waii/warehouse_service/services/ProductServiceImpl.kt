@@ -20,11 +20,11 @@ class ProductServiceImpl(
 ) : ProductService {
 
     override fun getProducts(): List<ProductDTO> {
-        return productRepository.findAll().map { it -> it.toDTO() }
+        return productRepository.findAll().map { it.toDTO() }
     }
 
     override fun getProductsPerCategory(category: String): List<ProductDTO> {
-        return productRepository.findByCategory(category).map { it -> it.toDTO() }
+        return productRepository.findByCategory(category).map { it.toDTO() }
     }
 
     override fun addProduct(product: ProductDTO): ProductDTO {

@@ -16,11 +16,10 @@ class WarehouseControllerKafka(val warehouseService: WarehouseService) {
         containerFactory = "updateQuantitiesConcurrentKafkaListenerContainerFactory",
         topicPartitions = [TopicPartition(topic = "warehouse_service_requests", partitions = ["0"])]
     )
-    fun updateProductQuantities(updateQuantitiesDto: Set<UpdateQuantityDtoKafka>): Long {
-        println("Warehouse service received")
+    fun updateProductQuantities(updateQuantitiesDto: Set<UpdateQuantityDtoKafka>): Float {
 
         try {
-            warehouseService
+            return warehouseService
                 .updateProductQuantities(
                     updateQuantitiesDto
                 )
@@ -28,7 +27,6 @@ class WarehouseControllerKafka(val warehouseService: WarehouseService) {
             throw UnsatisfiableRequestException(exception.message)
         }
 
-        return 10
     }
 
 }

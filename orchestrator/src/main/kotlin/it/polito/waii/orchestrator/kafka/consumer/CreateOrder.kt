@@ -3,6 +3,7 @@ package it.polito.waii.orchestrator.kafka.consumer
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.serialization.FloatSerializer
 import org.apache.kafka.common.serialization.LongSerializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
@@ -42,7 +43,7 @@ class CreateOrder {
     }
 
     @Bean
-    fun createOrderConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderConsumerFactory") consumerFactory: ConsumerFactory<String, String>, messageConverter: StringJsonMessageConverter, replyTemplate: KafkaTemplate<String, Long>, @Qualifier("createOrderExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, String> {
+    fun createOrderConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderConsumerFactory") consumerFactory: ConsumerFactory<String, String>, messageConverter: StringJsonMessageConverter, replyTemplate: KafkaTemplate<String, Float>, @Qualifier("createOrderExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, String> {
         var container = ConcurrentKafkaListenerContainerFactory<String, String>()
         container.containerProperties.setGroupId("orchestrator_group_id_2")
         container.consumerFactory = consumerFactory
@@ -62,11 +63,11 @@ class CreateOrder {
     }
 
     @Bean
-    fun createOrderProducerFactory(): ProducerFactory<String, Long> {
+    fun createOrderProducerFactory(): ProducerFactory<String, Float> {
         var config = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to LongSerializer::class.java
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to FloatSerializer::class.java
         )
 
         return DefaultKafkaProducerFactory(config)
@@ -84,7 +85,7 @@ class CreateOrder {
     }
 
     @Bean
-    fun createOrderKafkaTemplate(producerFactory: ProducerFactory<String, Long>): KafkaTemplate<String, Long> {
+    fun createOrderKafkaTemplate(producerFactory: ProducerFactory<String, Float>): KafkaTemplate<String, Float> {
         return KafkaTemplate(producerFactory)
     }
 

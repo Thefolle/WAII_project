@@ -20,9 +20,9 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
         containerFactory = "createOrderConcurrentKafkaListenerContainerFactory",
         topicPartitions = [TopicPartition(topic = "orchestrator_requests", partitions = ["0"])]
     )
-    fun createOrder(orderDtoOrchestrator: OrderDtoOrchestrator, @Header("username") username: String, @Header("roles") roles: String): Long {
+    fun createOrder(orderDtoOrchestrator: OrderDtoOrchestrator, @Header("username") username: String, @Header("roles") roles: String): Float {
 
-        // warehouse check
+        // prepare data
         val updateQuantities =
             orderDtoOrchestrator.deliveries.keys
                 .map {
@@ -37,18 +37,27 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                 }
                 .toSet()
 
-        val warehouseFuture =
-            orchestratorService
-                .checkWarehouse(
-                    updateQuantities
-                )
+        // check warehouse availability and get the total price of the products
+        var totalPrice = 0f
+        try {
+            totalPrice =
+                orchestratorService
+                    .checkWarehouse(
+                        updateQuantities
+                    )
+                    .get()
+                    .payload
+        } catch (exception: Exception) {
+            throw UnsatisfiableRequestException("Some failure of warehouse_service has occurred")
+        }
 
-        // wallet check
+
+        // prepare data
         val transactionDto =
             TransactionDto(
                 null,
                 orderDtoOrchestrator.walletId,
-                orderDtoOrchestrator.total,
+                totalPrice,
                 null,
                 !orderDtoOrchestrator.isIssuingOrCancelling,
                 // for now this is null: modify order_service to first save the order, as Saga requires
@@ -56,30 +65,15 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                 null
             )
 
-        val walletFuture =
+        try {
             orchestratorService
                 .checkWallet(
                     transactionDto,
                     username,
                     roles
                 )
-
-        // check eventual failures
-        var hasFailedWallet = false
-        try {
-            walletFuture.get()
+                .get()
         } catch (exception: Exception) {
-            hasFailedWallet = true
-        }
-
-        var hasFailedWarehouse = false
-        try {
-            warehouseFuture.get()
-        } catch (exception: Exception) {
-            hasFailedWarehouse = true
-        }
-
-        if (hasFailedWallet && !hasFailedWarehouse) {
             orchestratorService
                 .checkWarehouse(
                     updateQuantities
@@ -90,28 +84,12 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                         .toSet()
                 )
                 .get()
-        } else if (!hasFailedWallet && hasFailedWarehouse) {
-            orchestratorService
-                .checkWallet(
-                    transactionDto
-                        .also {
-                            it.isRech = orderDtoOrchestrator.isIssuingOrCancelling
-                        },
-                    username,
-                    roles
-                )
-        }
 
-        if (hasFailedWallet || hasFailedWarehouse) {
-            var message = "The order couldn't be created due to some" +
-                    " failure of the following services: "
-            message += if (hasFailedWallet) "wallet_service " else ""
-            message += if (hasFailedWarehouse) "warehouse_service " else ""
-            throw UnsatisfiableRequestException(message)
+            throw UnsatisfiableRequestException("Some failure of wallet_service occurred")
         }
 
 
-        return 0
+        return totalPrice
     }
 
 }

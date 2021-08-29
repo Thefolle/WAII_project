@@ -1,6 +1,7 @@
 package it.polito.waii.order_service.services
 
 import it.polito.waii.order_service.dtos.OrderDto
+import it.polito.waii.order_service.dtos.OrderDtoOrchestrator
 import it.polito.waii.order_service.dtos.PatchOrderDto
 import it.polito.waii.order_service.entities.*
 import it.polito.waii.order_service.exceptions.UnsatisfiableRequestException
@@ -31,7 +32,7 @@ class OrderServiceImpl : OrderService {
 
     @Autowired
     @Qualifier("createOrderToOrchestratorReplyingKafkaTemplate")
-    lateinit var orderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDto, Long>
+    lateinit var orderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDtoOrchestrator, Float>
 
 
     @Transactional
@@ -52,26 +53,20 @@ class OrderServiceImpl : OrderService {
         }
             .toSet()
 
-        var orderId =
-            orderRepository
-                .save(Order(null, customer, wallet, deliveries, orderDto.total, OrderStatus.ISSUED))
-                .map { it.id }
-                .awaitSingle()!!
-
         // request orchestration
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
         replyPartition.putInt(0)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
         correlationId.putInt(0)
 
-        orderDto.isIssuingOrCancelling = true
+        val orderDtoOrchestrator = orderDto.toOrderDtoOrchestrator(true)
 
         val future =
             orderDtoLongReplyingKafkaTemplate
                 .sendAndReceive(
                     MessageBuilder
                         .withPayload(
-                            orderDto
+                            orderDtoOrchestrator
                         )
                         .setHeader(KafkaHeaders.TOPIC, "orchestrator_requests")
                         .setHeader(KafkaHeaders.PARTITION_ID, 0)
@@ -83,21 +78,24 @@ class OrderServiceImpl : OrderService {
                         .setHeader("roles", roles)
                         .build(),
                     Duration.ofSeconds(15),
-                    ParameterizedTypeReference.forType<Long>(Long::class.java)
+                    ParameterizedTypeReference.forType<Float>(Float::class.java)
                 )
 
+        var totalPrice: Float
         try {
-            future
+            totalPrice = future
                 .get()
+                .payload
         } catch (exception: Exception) {
-            orderRepository
-                .deleteById(orderId)
-                .awaitSingleOrNull()
             throw UnsatisfiableRequestException("The order couldn't be created because" +
                     " the following service didn't reply: orchestrator_service")
         }
 
-        orderId
+        orderRepository
+            .save(Order(null, customer, wallet, deliveries, totalPrice, OrderStatus.ISSUED))
+            .map { it.id }
+            .awaitSingle()!!
+
     }
 
     @Transactional
@@ -205,28 +203,24 @@ class OrderServiceImpl : OrderService {
 
         if (orderDto.status == OrderStatus.CANCELED && oldOrder.status != OrderStatus.ISSUED) throw UnsatisfiableRequestException("The order cannot be deleted anymore.")
 
-        val order = orderRepository
-            .save(
-                Order(
-                    orderDto.id,
-                    Customer(if (isCustomerChanged) newCustomerId else oldCustomerId),
-                    Wallet(if (isWalletChanged) newWalletId else oldWalletId),
-                    deliveries ?: oldOrder.deliveries,
-                    orderDto.total ?: oldOrder.total,
-                    orderDto.status ?: oldOrder.status
-                )
+        var newOrder =
+            Order(
+                orderDto.id,
+                Customer(if (isCustomerChanged) newCustomerId else oldCustomerId),
+                Wallet(if (isWalletChanged) newWalletId else oldWalletId),
+                deliveries ?: oldOrder.deliveries,
+                0f, // this value of the total price is temporary and is not stored neither used
+                orderDto.status ?: oldOrder.status
             )
-            .awaitSingle()
 
-        if (orderDto.status == OrderStatus.CANCELED || orderDto.status == OrderStatus.FAILED || isWalletChanged || isCustomerChanged || deliveries != null || orderDto.total != null) {
+        if (orderDto.status == OrderStatus.CANCELED || orderDto.status == OrderStatus.FAILED || isWalletChanged || isCustomerChanged || deliveries != null) {
             // restore wallet and warehouse as before issuing
             val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
             replyPartition.putInt(0)
             val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
             correlationId.putInt(1)
 
-            val orderToCancel = oldOrder.toDto()
-            orderToCancel.isIssuingOrCancelling = false
+            val orderToCancel = oldOrder.toDto().toOrderDtoOrchestrator(false)
 
             // deposit into the old wallet and bring back products into the old warehouse
             var future =
@@ -246,7 +240,7 @@ class OrderServiceImpl : OrderService {
                             .setHeader("roles", roles)
                             .build(),
                         Duration.ofSeconds(15),
-                        ParameterizedTypeReference.forType<Long>(Long::class.java)
+                        ParameterizedTypeReference.forType<Float>(Float::class.java)
                     )
 
             try {
@@ -258,8 +252,7 @@ class OrderServiceImpl : OrderService {
             }
 
 
-            val orderToIssue = order.toDto()
-            orderToIssue.isIssuingOrCancelling = true
+            val orderToIssue = newOrder.toDto().toOrderDtoOrchestrator(true)
             // withdraw from the new wallet and take products from the new warehouse
             future =
                 orderDtoLongReplyingKafkaTemplate
@@ -278,21 +271,26 @@ class OrderServiceImpl : OrderService {
                             .setHeader("roles", roles)
                             .build(),
                         Duration.ofSeconds(15),
-                        ParameterizedTypeReference.forType(Long::class.java)
+                        ParameterizedTypeReference.forType(Float::class.java)
                     )
 
             try {
-                future
-                    .get()
+                newOrder.total =
+                    future
+                        .get()
+                        .payload
             } catch (exception: Exception) {
                 throw UnsatisfiableRequestException("The order couldn't be updated because" +
                         " the following service didn't reply: orchestrator_service")
             }
 
-
         }
 
-        order
+        orderRepository
+            .save(
+                newOrder
+            )
+            .awaitSingle()
     }
 
     @Transactional
@@ -301,7 +299,6 @@ class OrderServiceImpl : OrderService {
         updateOrder(
             PatchOrderDto(
                 id,
-                null,
                 null,
                 null,
                 null,

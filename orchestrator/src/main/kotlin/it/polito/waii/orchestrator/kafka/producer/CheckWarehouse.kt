@@ -6,6 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.SerializationException
+import org.apache.kafka.common.serialization.FloatDeserializer
 import org.apache.kafka.common.serialization.LongDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
@@ -59,18 +60,18 @@ class CheckWarehouse {
     }
 
     @Bean
-    fun checkWarehouseReplyingKafkaTemplate(producerFactory: ProducerFactory<String, Set<UpdateQuantityDtoKafka>>, @Qualifier("checkWarehouseConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, Set<UpdateQuantityDtoKafka>, Long> {
+    fun checkWarehouseReplyingKafkaTemplate(producerFactory: ProducerFactory<String, Set<UpdateQuantityDtoKafka>>, @Qualifier("checkWarehouseConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Float>): ReplyingKafkaTemplate<String, Set<UpdateQuantityDtoKafka>, Float> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
         return replyingKafkaTemplate
     }
 
     @Bean
-    fun checkWarehouseConsumerFactory(): ConsumerFactory<String, Long> {
+    fun checkWarehouseConsumerFactory(): ConsumerFactory<String, Float> {
         var config = mapOf(
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to LongDeserializer::class.java,
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to FloatDeserializer::class.java,
             ConsumerConfig.GROUP_ID_CONFIG to "orchestrator_group_id_0",
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest"
         )
@@ -84,17 +85,11 @@ class CheckWarehouse {
     }
 
     @Bean
-    fun checkWarehouseConcurrentKafkaListenerContainerFactory(@Qualifier("checkWarehouseConsumerFactory") consumerFactory: ConsumerFactory<String, Long>, messageConverter: StringJsonMessageConverter, replyTemplate: KafkaTemplate<String, Long>, @Qualifier("checkWarehouseExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Long> {
-        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, Long>()
+    fun checkWarehouseConcurrentKafkaListenerContainerFactory(@Qualifier("checkWarehouseConsumerFactory") consumerFactory: ConsumerFactory<String, Float>, messageConverter: StringJsonMessageConverter, @Qualifier("checkWarehouseExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Float> {
+        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, Float>()
         containerFactory.containerProperties.setGroupId("orchestrator_group_id_0")
         containerFactory.consumerFactory = consumerFactory
         containerFactory.setMessageConverter(messageConverter)
-        containerFactory.setReplyTemplate(replyTemplate)
-        containerFactory.setRetryTemplate(
-            RetryTemplateBuilder()
-                .maxAttempts(1)
-                .build()
-        )
 
         containerFactory.setErrorHandler(SeekToCurrentErrorHandler(DeadLetterPublishingRecoverer(exceptionReplyTemplate) { _, _ ->
             TopicPartition(
@@ -107,7 +102,7 @@ class CheckWarehouse {
     }
 
     @Bean
-    fun checkWarehouseConcurrentMessageListenerContainer(@Qualifier("checkWarehouseConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, Long>): ConcurrentMessageListenerContainer<String, Long> {
+    fun checkWarehouseConcurrentMessageListenerContainer(@Qualifier("checkWarehouseConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, Float>): ConcurrentMessageListenerContainer<String, Float> {
         var container = containerFactory.createContainer("warehouse_service_responses")
         container.containerProperties.setGroupId("orchestrator_group_id_0")
 

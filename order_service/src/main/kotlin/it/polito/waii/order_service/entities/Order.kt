@@ -28,7 +28,6 @@ data class Order(
         deliveries.associate { it.product.id!! to it.toDto() },
         deliveries.associate { it.product.id!! to it.quantity },
         total,
-        false,
         status
     )
 

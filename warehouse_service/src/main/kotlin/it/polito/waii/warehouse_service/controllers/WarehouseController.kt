@@ -61,7 +61,7 @@ class WarehouseController {
     }
 
     @PutMapping("/{id}/quantity")
-    fun updateProductQuantity(@PathVariable("id") warehouseId: Long, @RequestBody updateQuantityDTO: UpdateQuantityDTO): ResponseEntity<ProductWarehouseDTO> {
+    fun updateProductQuantity(@PathVariable("id") warehouseId: Long, @RequestBody updateQuantityDTO: UpdateQuantityDTO): ResponseEntity<Float> {
         if (updateQuantityDTO.quantity < 0) throw ResponseStatusException(
             HttpStatus.FORBIDDEN,
             "Quantity should be positive!"

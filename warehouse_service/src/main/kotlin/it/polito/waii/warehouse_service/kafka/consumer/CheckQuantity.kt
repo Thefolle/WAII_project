@@ -3,6 +3,7 @@ package it.polito.waii.warehouse_service.kafka.consumer
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.serialization.FloatSerializer
 import org.apache.kafka.common.serialization.LongSerializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
@@ -20,7 +21,7 @@ import org.springframework.util.backoff.BackOffExecution
 class CheckQuantity {
 
     @Bean
-    fun updateQuantitiesConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<Any, Any>, messageConverter: MessageConverter, replyKafkaTemplate: KafkaTemplate<String, Long>, exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Any> {
+    fun updateQuantitiesConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<Any, Any>, messageConverter: MessageConverter, replyKafkaTemplate: KafkaTemplate<String, Float>, exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Any> {
         val concurrentKafkaListenerContainerFactory = ConcurrentKafkaListenerContainerFactory<String, Any>()
         concurrentKafkaListenerContainerFactory.consumerFactory = consumerFactory
         concurrentKafkaListenerContainerFactory.setMessageConverter(messageConverter)
@@ -68,17 +69,16 @@ class CheckQuantity {
     }
 
     @Bean
-    fun updateQuantityLongKafkaTemplate(producerFactory: ProducerFactory<String, Long>): KafkaTemplate<String, Long> {
+    fun updateQuantityKafkaTemplate(producerFactory: ProducerFactory<String, Float>): KafkaTemplate<String, Float> {
         return KafkaTemplate(producerFactory)
     }
 
     @Bean
-    fun updateQuantityLongProducerFactory(): ProducerFactory<String, Long> {
+    fun updateQuantityProducerFactory(): ProducerFactory<String, Float> {
         var config = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to LongSerializer::class.java,
-            ProducerConfig.RETRIES_CONFIG to 1
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to FloatSerializer::class.java
         )
 
         return DefaultKafkaProducerFactory(config)
