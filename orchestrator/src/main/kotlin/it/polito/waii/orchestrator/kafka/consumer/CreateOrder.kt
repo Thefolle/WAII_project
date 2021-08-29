@@ -25,7 +25,7 @@ class CreateOrder {
     @Bean
     fun createOrderConsumerFactory(): ConsumerFactory<String, String> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.GROUP_ID_CONFIG to "orchestrator_group_id_2",
@@ -64,7 +64,7 @@ class CreateOrder {
     @Bean
     fun createOrderProducerFactory(): ProducerFactory<String, Long> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to LongSerializer::class.java
         )
@@ -75,7 +75,7 @@ class CreateOrder {
     @Bean
     fun createOrderExceptionProducerFactory(): ProducerFactory<String, Any> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
         )

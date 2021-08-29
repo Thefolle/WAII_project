@@ -26,7 +26,7 @@ class PerformTransaction {
     @Bean
     fun performTransactionConsumerFactory(): ConsumerFactory<String, String> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.GROUP_ID_CONFIG to "wallet_service_group_id_0",
@@ -40,7 +40,7 @@ class PerformTransaction {
     @Bean
     fun performTransactionExceptionProducerFactory(): ProducerFactory<String, Any> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
         )
@@ -76,7 +76,7 @@ class PerformTransaction {
     @Bean
     fun performTransactionProducerFactory(): ProducerFactory<String, Long> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to LongSerializer::class.java
         )

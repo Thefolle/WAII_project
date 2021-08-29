@@ -21,7 +21,7 @@ class GetOrders {
     @Bean
     fun getOrdersConsumerFactory(): ConsumerFactory<String, Void> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ConsumerConfig.GROUP_ID_CONFIG to "order_service_group_id",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to VoidDeserializer::class.java,
@@ -44,7 +44,7 @@ class GetOrders {
     @Bean
     fun getOrdersProducerFactory(): ProducerFactory<String, Set<OrderDto>> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092"
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092"
         )
 
         val objectMapper = ObjectMapper()

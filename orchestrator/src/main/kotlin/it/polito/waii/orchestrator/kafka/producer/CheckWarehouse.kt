@@ -31,7 +31,7 @@ class CheckWarehouse {
     @Bean
     fun checkWarehouseProducerFactory(): ProducerFactory<String, Set<UpdateQuantityDtoKafka>> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092"
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092"
         )
 
         val objectMapper = ObjectMapper()
@@ -45,7 +45,7 @@ class CheckWarehouse {
     @Bean
     fun checkWarehouseExceptionProducerFactory(): ProducerFactory<String, Any> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
         )
@@ -68,7 +68,7 @@ class CheckWarehouse {
     @Bean
     fun checkWarehouseConsumerFactory(): ConsumerFactory<String, Long> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to LongDeserializer::class.java,
             ConsumerConfig.GROUP_ID_CONFIG to "orchestrator_group_id_0",
