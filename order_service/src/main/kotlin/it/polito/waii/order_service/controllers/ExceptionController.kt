@@ -11,6 +11,9 @@ import java.nio.charset.Charset
 @Component
 class ExceptionController {
 
+    /**
+     * The purpose of this controller is capturing any unexpected or unmanaged exception
+     */
     @KafkaListener(
         containerFactory = "exceptionsConcurrentKafkaListenerContainerFactory",
         topicPartitions = [TopicPartition(topic = "exceptions", partitions = ["0"])]

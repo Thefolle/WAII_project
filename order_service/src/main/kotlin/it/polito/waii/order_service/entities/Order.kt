@@ -23,7 +23,6 @@ data class Order(
 
     fun toDto(): OrderDto = OrderDto(
         id,
-        buyer.id!!,
         wallet.id!!,
         deliveries.associate { it.product.id!! to it.toDto() },
         deliveries.associate { it.product.id!! to it.quantity },

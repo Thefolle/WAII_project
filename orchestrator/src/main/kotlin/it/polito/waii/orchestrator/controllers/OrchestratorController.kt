@@ -6,11 +6,16 @@ import it.polito.waii.orchestrator.dtos.TransactionDto
 import it.polito.waii.orchestrator.dtos.UpdateQuantityDtoKafka
 import it.polito.waii.orchestrator.exceptions.UnsatisfiableRequestException
 import it.polito.waii.orchestrator.services.OrchestratorService
+import org.springframework.http.HttpStatus
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.annotation.TopicPartition
+import org.springframework.kafka.support.KafkaNull
+import org.springframework.messaging.Message
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.messaging.handler.annotation.SendTo
+import org.springframework.messaging.support.MessageBuilder
 import org.springframework.stereotype.Component
+import org.springframework.web.server.ResponseStatusException
 
 @Component
 class OrchestratorController(val orchestratorService: OrchestratorService) {
@@ -20,7 +25,7 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
         containerFactory = "createOrderConcurrentKafkaListenerContainerFactory",
         topicPartitions = [TopicPartition(topic = "orchestrator_requests", partitions = ["0"])]
     )
-    fun createOrder(orderDtoOrchestrator: OrderDtoOrchestrator, @Header("username") username: String, @Header("roles") roles: String): Float {
+    fun createOrder(orderDtoOrchestrator: OrderDtoOrchestrator, @Header("username") username: String, @Header("roles") roles: String): Message<Float> {
 
         // prepare data
         val updateQuantities =
@@ -38,17 +43,33 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                 .toSet()
 
         // check warehouse availability and get the total price of the products
-        var totalPrice = 0f
+        var totalPrice: Float
+        var futureResult: Message<*>
         try {
-            totalPrice =
+            futureResult =
                 orchestratorService
                     .checkWarehouse(
                         updateQuantities
                     )
                     .get()
-                    .payload
+            totalPrice = futureResult.payload
         } catch (exception: Exception) {
-            throw UnsatisfiableRequestException("Some failure of warehouse_service has occurred")
+            return MessageBuilder
+                .withPayload(0f)
+                .setHeader("hasException", true)
+                .setHeader("exceptionMessage", "The request cannot be processed due to some" +
+                        "malfunction. Please, try later.")
+                .setHeader("exceptionStatus", HttpStatus.REQUEST_TIMEOUT.value())
+                .build()
+        }
+
+        if ((futureResult.headers["hasException"] as Boolean)) {
+            return MessageBuilder
+                .withPayload(0f)
+                .setHeader("hasException", true)
+                .setHeader("exceptionMessage", futureResult.headers["exceptionMessage"])
+                .setHeader("exceptionRawStatus", futureResult.headers["exceptionRawStatus"])
+                .build()
         }
 
 
@@ -65,15 +86,27 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                 null
             )
 
+        // withdraw from the wallet
         try {
-            orchestratorService
-                .checkWallet(
-                    transactionDto,
-                    username,
-                    roles
-                )
-                .get()
+            futureResult =
+                orchestratorService
+                    .checkWallet(
+                        transactionDto,
+                        username,
+                        roles
+                    )
+                    .get()
         } catch (exception: Exception) {
+            return MessageBuilder
+                .withPayload(0f)
+                .setHeader("hasException", true)
+                .setHeader("exceptionMessage", "The request cannot be processed due to some" +
+                        "malfunction. Please, try later.")
+                .setHeader("exceptionStatus", HttpStatus.REQUEST_TIMEOUT.value())
+                .build()
+        }
+
+        if ((futureResult.headers["hasException"] as Boolean)) {
             orchestratorService
                 .checkWarehouse(
                     updateQuantities
@@ -85,11 +118,18 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                 )
                 .get()
 
-            throw UnsatisfiableRequestException("Some failure of wallet_service occurred")
+            return MessageBuilder
+                .withPayload(0f)
+                .setHeader("hasException", true)
+                .setHeader("exceptionMessage", futureResult.headers["exceptionMessage"])
+                .setHeader("exceptionRawStatus", futureResult.headers["exceptionRawStatus"])
+                .build()
         }
 
-
-        return totalPrice
+        return MessageBuilder
+            .withPayload(totalPrice)
+            .setHeader("hasException", false)
+            .build()
     }
 
 }

@@ -5,8 +5,10 @@ import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import it.polito.waii.order_service.dtos.UserDTO
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpStatus
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
+import org.springframework.web.server.ResponseStatusException
 import java.security.Key
 import java.security.SignatureException
 import java.util.*
@@ -36,7 +38,7 @@ class JwtUtils {
         } catch (e: MalformedJwtException){
             throw e
         } catch (e: ExpiredJwtException){
-            throw e
+            throw ResponseStatusException(HttpStatus.UNAUTHORIZED, e.message)
         } catch (e: UnsupportedJwtException){
             throw e
         } catch (e: IllegalArgumentException){

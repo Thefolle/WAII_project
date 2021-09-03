@@ -75,7 +75,15 @@ class ProductServiceImpl(
     }
 
     override fun deleteProduct(productId: Long) {
-        productRepository.deleteById(productId)
+        if (productRepository.existsById(productId)) {
+            productRepository.deleteById(productId)
+        } else {
+            throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "No product with id $productId exists."
+            )
+        }
+
     }
 
     override fun getProductPicture(productId: Long): String {
@@ -103,6 +111,13 @@ class ProductServiceImpl(
     }
 
     override fun getWarehouses(productId: Long): List<WarehouseDto> {
+        if (!productRepository.existsById(productId)) {
+            throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "No product with id $productId exists."
+            )
+        }
+
         return productWarehouseRepository
             .getAllByProduct(productRepository.findById(productId).get())
             .map {

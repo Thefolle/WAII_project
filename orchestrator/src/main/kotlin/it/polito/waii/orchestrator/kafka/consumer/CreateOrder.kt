@@ -7,7 +7,9 @@ import org.apache.kafka.common.serialization.FloatSerializer
 import org.apache.kafka.common.serialization.LongSerializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
@@ -17,6 +19,7 @@ import org.springframework.kafka.listener.SeekToCurrentErrorHandler
 import org.springframework.kafka.support.converter.StringJsonMessageConverter
 import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.util.backoff.BackOffExecution
+import java.time.Instant
 
 @Configuration
 class CreateOrder {
@@ -26,7 +29,7 @@ class CreateOrder {
     @Bean
     fun createOrderConsumerFactory(): ConsumerFactory<String, String> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.GROUP_ID_CONFIG to "orchestrator_group_id_2",
@@ -44,28 +47,34 @@ class CreateOrder {
 
     @Bean
     fun createOrderConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderConsumerFactory") consumerFactory: ConsumerFactory<String, String>, messageConverter: StringJsonMessageConverter, replyTemplate: KafkaTemplate<String, Float>, @Qualifier("createOrderExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, String> {
-        var container = ConcurrentKafkaListenerContainerFactory<String, String>()
-        container.containerProperties.setGroupId("orchestrator_group_id_2")
-        container.consumerFactory = consumerFactory
-        container.setMessageConverter(messageConverter)
-        container.setReplyTemplate(replyTemplate)
+        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, String>()
+        containerFactory.containerProperties.setGroupId("orchestrator_group_id_2")
+        containerFactory.consumerFactory = consumerFactory
+        containerFactory.setMessageConverter(messageConverter)
+        containerFactory.setReplyTemplate(replyTemplate)
 
         // The backoff controls how many times Kafka will attempt to send the same request on a controller;
         // in this case, no additional attempts are allowed
-        container.setErrorHandler(SeekToCurrentErrorHandler(DeadLetterPublishingRecoverer(exceptionReplyTemplate) { _, _ ->
+        containerFactory.setErrorHandler(SeekToCurrentErrorHandler(DeadLetterPublishingRecoverer(exceptionReplyTemplate) { _, _ ->
             TopicPartition(
                 "exceptions",
                 0
             )
         }) { BackOffExecution { BackOffExecution.STOP } })
 
-        return container
+        val containerFactoryInitializationTimestamp = Instant.now().toEpochMilli()
+        containerFactory.setRecordFilterStrategy {
+            it.timestamp() < containerFactoryInitializationTimestamp
+        }
+        containerFactory.setAckDiscarded(true)
+
+        return containerFactory
     }
 
     @Bean
     fun createOrderProducerFactory(): ProducerFactory<String, Float> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to FloatSerializer::class.java
         )
@@ -76,7 +85,7 @@ class CreateOrder {
     @Bean
     fun createOrderExceptionProducerFactory(): ProducerFactory<String, Any> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
         )

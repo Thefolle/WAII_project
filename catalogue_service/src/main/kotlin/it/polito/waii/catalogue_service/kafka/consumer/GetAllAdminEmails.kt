@@ -23,7 +23,7 @@ class GetAllAdminEmails {
     @Bean
     fun getAllAdminEmailsConsumerFactory(): ConsumerFactory<String, Void> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to VoidDeserializer::class.java,
             ConsumerConfig.GROUP_ID_CONFIG to "order_service_group_id",
@@ -54,7 +54,7 @@ class GetAllAdminEmails {
     @Bean
     fun getAllAdminEmailsProducerFactory(): ProducerFactory<String, Set<String>> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092"
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092"
         )
         val objectMapper = ObjectMapper()
         val type = objectMapper.typeFactory.constructParametricType(Set::class.java, String::class.java)
@@ -70,7 +70,7 @@ class GetAllAdminEmails {
     @Bean
     fun getAllAdminEmailsExceptionProducerFactory(): ProducerFactory<String, Any> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
         )

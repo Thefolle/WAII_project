@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletResponse
 @EnableEurekaClient
 //@PropertySource(value = ["classpath:application.properties"], ignoreResourceNotFound = false)
 class CatalogueServiceApplication{
+
     @Bean
     fun passwordEncoder(): PasswordEncoder {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder()

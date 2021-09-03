@@ -48,15 +48,33 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    override fun doRecharge(transaction: TransactionDTO) = doRechargeInner(transaction)
-
-    override fun doRecharge(transaction: TransactionDTO, roles: String): TransactionDTO {
-        if (roles.contains("ROLE_ADMIN")) return doRechargeInner(transaction)
-        else throw UnsatisfiableRequestException("The user cannot perform the recharge because his privileges are lower than admin.")
+    override fun doRecharge(transaction: TransactionDTO): TransactionDTO {
+        val wallet = getWalletById(transaction.wid)
+        wallet.addBalance(transaction.transactedMoneyAmount)
+        val recharge = Recharge(rid = null,
+            rechargedMoneyAmount = transaction.transactedMoneyAmount,
+            timestamp = LocalDateTime.now())
+        val saved = rechargeRepository.save(recharge)
+        val res = Transaction(tid = null,
+            wallet = wallet,
+            transactedMoneyAmount = transaction.transactedMoneyAmount,
+            timestamp = LocalDateTime.now(),
+            isRech = true,
+            orderId = null,
+            recharge = saved)
+        transactionRepository.save(res)
+        return res.toDto()
     }
 
-    private fun doRechargeInner(transaction: TransactionDTO): TransactionDTO {
+    /**
+     * this method is called only by the system for internal consistency, so it doesn't check the roles like its
+     * overloaded function
+      */
+    override fun doRecharge(transaction: TransactionDTO, username: String): TransactionDTO {
         val wallet = getWalletById(transaction.wid)
+        if (wallet.ownerUsername != username) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "You don't own this wallet!")
+        }
         wallet.addBalance(transaction.transactedMoneyAmount)
         val recharge = Recharge(rid = null,
             rechargedMoneyAmount = transaction.transactedMoneyAmount,
@@ -125,7 +143,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
     override fun getWallet(walletId: Long): WalletDTO {
         val username = getUsername()
         val walletOptional = walletRepository.findById(walletId)
-        if(walletOptional.isEmpty) throw  ResponseStatusException(HttpStatus.NOT_FOUND, "Wallet doesn't exists with id $walletId.")
+        if(walletOptional.isEmpty) throw ResponseStatusException(HttpStatus.NOT_FOUND, "Wallet with id $walletId doesn't exists.")
         val isAdmin = getUserRole()
         if (!isAdmin && walletOptional.get().ownerUsername != username) throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this wallet!")
         return walletOptional.get().toDTO()

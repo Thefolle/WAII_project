@@ -12,12 +12,14 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
+import org.springframework.kafka.config.KafkaListenerConfigUtils
 import org.springframework.kafka.core.*
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.ConsumerAwareBatchErrorHandler
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.retry.support.RetryTemplateBuilder
+import java.time.Duration
 
 @Configuration
 class CreateOrderLoopback {
@@ -25,7 +27,7 @@ class CreateOrderLoopback {
     @Bean
     fun createOrderLoopbackProducerFactory(): ProducerFactory<String, OrderDto> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
         )
@@ -60,11 +62,6 @@ class CreateOrderLoopback {
     fun createOrderLoopbackConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderLoopbackConsumerFactory") consumerFactory: ConsumerFactory<String, Long>): ConcurrentKafkaListenerContainerFactory<String, Long> {
         var containerFactory = ConcurrentKafkaListenerContainerFactory<String, Long>()
         containerFactory.consumerFactory = consumerFactory
-        containerFactory.setRetryTemplate(
-            RetryTemplateBuilder()
-                .maxAttempts(1)
-                .build()
-        )
 
         return containerFactory
     }
@@ -72,7 +69,7 @@ class CreateOrderLoopback {
     @Bean
     fun createOrderLoopbackConsumerFactory(): ConsumerFactory<String, Long> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.GROUP_ID_CONFIG to "order_service_group_id",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to LongDeserializer::class.java,
@@ -86,6 +83,8 @@ class CreateOrderLoopback {
     fun createOrderLoopbackReplyingKafkaTemplate(@Qualifier("createOrderLoopbackProducerFactory") producerFactory: ProducerFactory<String, OrderDto>, @Qualifier("createOrderLoopbackConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, OrderDto, Long> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
+        // don't use the replyTimeout parameter of sendAndReceive: it is neglected, probably for a bug
+        replyingKafkaTemplate.setDefaultReplyTimeout(Duration.ofSeconds(15))
         return replyingKafkaTemplate
     }
 

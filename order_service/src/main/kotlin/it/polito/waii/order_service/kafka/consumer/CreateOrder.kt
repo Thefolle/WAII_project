@@ -17,6 +17,7 @@ import org.springframework.kafka.listener.SeekToCurrentErrorHandler
 import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.util.backoff.BackOffExecution
+import java.time.Instant
 
 @Configuration
 class CreateOrder {
@@ -24,7 +25,7 @@ class CreateOrder {
     @Bean
     fun createOrderConsumerFactory(): ConsumerFactory<String, OrderDto> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java,
             ConsumerConfig.GROUP_ID_CONFIG to "order_service_group_id",
@@ -37,26 +38,32 @@ class CreateOrder {
 
     @Bean
     fun createOrderConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderConsumerFactory") consumerFactory: ConsumerFactory<String, OrderDto>, @Qualifier("createOrderKafkaTemplate") kafkaTemplate: KafkaTemplate<String, Long>, @Qualifier("createOrderExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, OrderDto> {
-        var concurrentKafkaListenerContainerFactory = ConcurrentKafkaListenerContainerFactory<String, OrderDto>()
-        concurrentKafkaListenerContainerFactory.consumerFactory = consumerFactory
-        concurrentKafkaListenerContainerFactory.setReplyTemplate(kafkaTemplate)
+        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, OrderDto>()
+        containerFactory.consumerFactory = consumerFactory
+        containerFactory.setReplyTemplate(kafkaTemplate)
 
         // The backoff controls how many times Kafka will attempt to send the same request on a controller;
         // in this case, no additional attempts are allowed
-        concurrentKafkaListenerContainerFactory.setErrorHandler(SeekToCurrentErrorHandler(DeadLetterPublishingRecoverer(exceptionReplyTemplate) { _, _ ->
+        containerFactory.setErrorHandler(SeekToCurrentErrorHandler(DeadLetterPublishingRecoverer(exceptionReplyTemplate) { _, _ ->
             TopicPartition(
                 "exceptions",
                 0
             )
         }) { BackOffExecution { BackOffExecution.STOP } })
 
-        return concurrentKafkaListenerContainerFactory
+        val containerFactoryInitializationTimestamp = Instant.now().toEpochMilli()
+        containerFactory.setRecordFilterStrategy {
+            it.timestamp() < containerFactoryInitializationTimestamp
+        }
+        containerFactory.setAckDiscarded(true)
+
+        return containerFactory
     }
 
     @Bean
     fun createOrderProducerFactory(): ProducerFactory<String, Long> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to LongSerializer::class.java
         )
@@ -72,7 +79,7 @@ class CreateOrder {
     @Bean
     fun createOrderExceptionProducerFactory(): ProducerFactory<String, Any> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
         )

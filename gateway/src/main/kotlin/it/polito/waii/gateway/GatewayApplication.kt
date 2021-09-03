@@ -10,9 +10,11 @@ import org.springframework.cloud.gateway.route.RouteLocator
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 import org.springframework.context.annotation.Bean
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ResponseStatusException
 import java.time.Duration
 
 
@@ -73,43 +75,43 @@ class GatewayApplication{
     }
 
     @GetMapping("/failureCatalogue")
-    fun failureCatalogueGet(): String {
-        return "We are sorry, the  Catalogue Service you are trying to reach is currently unavailable. Try again later!"
+    fun failureCatalogueGet() {
+        throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "We are sorry, the Catalogue Service you are trying to reach is currently unavailable. Try again later!")
     }
 
     @PostMapping("/failureCatalogue")
-    fun failureCataloguePost(): String {
-        return "We are sorry, the Catalogue Service you are trying to reach is currently unavailable. Try again later!"
+    fun failureCataloguePost() {
+        throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "We are sorry, the Catalogue Service you are trying to reach is currently unavailable. Try again later!")
     }
 
     @GetMapping("/failureOrder")
-    fun failureOrderGet(): String {
-        return "We are sorry, the Order Service you are trying to reach is currently unavailable. Try again later!"
+    fun failureOrderGet() {
+        throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"We are sorry, the Order Service you are trying to reach is currently unavailable. Try again later!")
     }
 
     @PostMapping("/failureOrder")
-    fun failureOrderPost(): String {
-        return "We are sorry, the Order Service you are trying to reach is currently unavailable. Try again later!"
+    fun failureOrderPost() {
+        throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"We are sorry, the Order Service you are trying to reach is currently unavailable. Try again later!")
     }
 
     @GetMapping("/failureWarehouse")
-    fun failureWarehouseGet(): String {
-        return "We are sorry, the Warehouse Service you are trying to reach is currently unavailable. Try again later!"
+    fun failureWarehouseGet() {
+        throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"We are sorry, the Warehouse Service you are trying to reach is currently unavailable. Try again later!")
     }
 
     @PostMapping("/failureWarehouse")
-    fun failureWarehousePost(): String {
-        return "We are sorry, the Warehouse Service you are trying to reach is currently unavailable. Try again later!"
+    fun failureWarehousePost() {
+        throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"We are sorry, the Warehouse Service you are trying to reach is currently unavailable. Try again later!")
     }
 
     @GetMapping("/failureWallet")
-    fun failureWalletGet(): String {
-        return "We are sorry, the Wallet Service you are trying to reach is currently unavailable. Try again later!"
+    fun failureWalletGet() {
+        throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"We are sorry, the Wallet Service you are trying to reach is currently unavailable. Try again later!")
     }
 
     @PostMapping("/failureWallet")
-    fun failureWalletPost(): String {
-        return "We are sorry, the Wallet Service you are trying to reach is currently unavailable. Try again later!"
+    fun failureWalletPost() {
+        throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"We are sorry, the Wallet Service you are trying to reach is currently unavailable. Try again later!")
     }
 
 }

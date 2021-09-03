@@ -30,18 +30,7 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_HOST_NAME: kafka
       KAFKA_ADVERTISED_PORT: 9092
-      KAFKA_CREATE_TOPICS: "topic1:1:1"
-
-
-  kafka_configurer:
-    build: kafka_configurer
-    container_name: kafka_configurer
-    restart: on-failure
-    depends_on:
-      - kafka
-      - zookeeper
-    networks:
-      - app-network
+      KAFKA_CREATE_TOPICS: "order_service_requests:5:1,order_service_responses:1:1,orchestrator_requests:1:1,orchestrator_responses:1:1,warehouse_service_requests:1:1,warehouse_service_responses:1:1,wallet_service_requests:1:1,wallet_service_responses:1:1,catalogue_service_requests:1:1,catalogue_service_responses:1:1,exceptions:1:1"
 
   orchestrator:
     build: orchestrator

@@ -23,6 +23,7 @@ import org.springframework.kafka.support.converter.StringJsonMessageConverter
 import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.retry.support.RetryTemplateBuilder
 import org.springframework.util.backoff.BackOffExecution
+import java.time.Duration
 
 @Configuration
 class CheckWallet {
@@ -30,7 +31,7 @@ class CheckWallet {
     @Bean
     fun checkWalletProducerFactory(): ProducerFactory<String, TransactionDto> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
         )
@@ -41,7 +42,7 @@ class CheckWallet {
     @Bean
     fun checkWalletExceptionProducerFactory(): ProducerFactory<String, Any> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
         )
@@ -58,13 +59,15 @@ class CheckWallet {
     fun checkWalletReplyingKafkaTemplate(producerFactory: ProducerFactory<String, TransactionDto>, @Qualifier("checkWalletConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, TransactionDto, Long> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
+        // don't use the replyTimeout parameter of sendAndReceive: it is neglected, probably for a bug
+        replyingKafkaTemplate.setDefaultReplyTimeout(Duration.ofSeconds(15))
         return replyingKafkaTemplate
     }
 
     @Bean
     fun checkWalletConsumerFactory(): ConsumerFactory<String, Long> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to LongDeserializer::class.java,
             ConsumerConfig.GROUP_ID_CONFIG to "orchestrator_group_id_1",

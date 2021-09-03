@@ -23,6 +23,7 @@ import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.retry.RetryPolicy
 import org.springframework.retry.support.RetryTemplateBuilder
+import java.time.Duration
 
 @Configuration
 class CreateOrderToOrchestrator {
@@ -30,7 +31,7 @@ class CreateOrderToOrchestrator {
     @Bean
     fun createOrderToOrchestratorProducerFactory(): ProducerFactory<String, OrderDtoOrchestrator> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
         )
@@ -42,6 +43,8 @@ class CreateOrderToOrchestrator {
     fun createOrderToOrchestratorReplyingKafkaTemplate(@Qualifier("createOrderToOrchestratorProducerFactory") producerFactory: ProducerFactory<String, OrderDtoOrchestrator>, @Qualifier("createOrderToOrchestratorConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Float>): ReplyingKafkaTemplate<String, OrderDtoOrchestrator, Float> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
+        // don't use the replyTimeout parameter of sendAndReceive: it is neglected, probably for a bug
+        replyingKafkaTemplate.setDefaultReplyTimeout(Duration.ofSeconds(15))
         return replyingKafkaTemplate
     }
 
@@ -66,11 +69,6 @@ class CreateOrderToOrchestrator {
     fun createOrderToOrchestratorConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderToOrchestratorConsumerFactory") consumerFactory: ConsumerFactory<String, Float>): ConcurrentKafkaListenerContainerFactory<String, Float> {
         var containerFactory = ConcurrentKafkaListenerContainerFactory<String, Float>()
         containerFactory.consumerFactory = consumerFactory
-        containerFactory.setRetryTemplate(
-            RetryTemplateBuilder()
-                .maxAttempts(1)
-                .build()
-        )
 
         return containerFactory
     }
@@ -78,7 +76,7 @@ class CreateOrderToOrchestrator {
     @Bean
     fun createOrderToOrchestratorConsumerFactory(): ConsumerFactory<String, Float> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.GROUP_ID_CONFIG to "order_service_group_id",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to FloatDeserializer::class.java,

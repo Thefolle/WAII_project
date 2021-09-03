@@ -33,9 +33,11 @@ class WarehouseController {
     }
 
     @PutMapping("/{id}")
-    fun updateWarehouse(@PathVariable("id") id: Long, @RequestBody warehouseDto: WarehouseDto): Long? {
-        return warehouseService
+    fun updateWarehouse(@PathVariable("id") id: Long, @RequestBody warehouseDto: WarehouseDto): String {
+        val idOrNull = warehouseService
             .updateWarehouse(id, warehouseDto)
+
+        return if (idOrNull == null) "The warehouse has been correctly updated." else "A new warehouse with id $idOrNull has been created."
     }
 
     @PatchMapping("/{id}")
@@ -61,12 +63,13 @@ class WarehouseController {
     }
 
     @PutMapping("/{id}/quantity")
-    fun updateProductQuantity(@PathVariable("id") warehouseId: Long, @RequestBody updateQuantityDTO: UpdateQuantityDTO): ResponseEntity<Float> {
+    fun updateProductQuantity(@PathVariable("id") warehouseId: Long, @RequestBody updateQuantityDTO: UpdateQuantityDTO): ResponseEntity<String> {
         if (updateQuantityDTO.quantity < 0) throw ResponseStatusException(
             HttpStatus.FORBIDDEN,
             "Quantity should be positive!"
         )
-        return ResponseEntity.status(HttpStatus.OK).body(warehouseService.updateProductQuantity(warehouseId, updateQuantityDTO))
+        warehouseService.updateProductQuantity(warehouseId, updateQuantityDTO)
+        return ResponseEntity.status(HttpStatus.OK).body("The quantity has been correctly updated")
     }
 
     @PutMapping("/{id}/alarm/{productId}")

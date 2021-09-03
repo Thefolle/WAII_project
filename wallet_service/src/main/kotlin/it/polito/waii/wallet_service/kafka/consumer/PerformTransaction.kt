@@ -17,6 +17,7 @@ import org.springframework.kafka.support.converter.MessageConverter
 import org.springframework.kafka.support.converter.StringJsonMessageConverter
 import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.util.backoff.BackOffExecution
+import java.time.Instant
 
 @Configuration
 class PerformTransaction {
@@ -26,7 +27,7 @@ class PerformTransaction {
     @Bean
     fun performTransactionConsumerFactory(): ConsumerFactory<String, String> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.GROUP_ID_CONFIG to "wallet_service_group_id_0",
@@ -40,7 +41,7 @@ class PerformTransaction {
     @Bean
     fun performTransactionExceptionProducerFactory(): ProducerFactory<String, Any> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
         )
@@ -55,28 +56,34 @@ class PerformTransaction {
 
     @Bean
     fun performTransactionConcurrentKafkaListenerContainerFactory(@Qualifier("performTransactionConsumerFactory") consumerFactory: ConsumerFactory<String, String>, messageConverter: MessageConverter, replyTemplate: KafkaTemplate<String, Long>, @Qualifier("performTransactionExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, String> {
-        var container = ConcurrentKafkaListenerContainerFactory<String, String>()
-        container.containerProperties.setGroupId("wallet_service_group_id_0")
-        container.consumerFactory = consumerFactory
-        container.setMessageConverter(messageConverter)
-        container.setReplyTemplate(replyTemplate)
+        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, String>()
+        containerFactory.containerProperties.setGroupId("wallet_service_group_id_0")
+        containerFactory.consumerFactory = consumerFactory
+        containerFactory.setMessageConverter(messageConverter)
+        containerFactory.setReplyTemplate(replyTemplate)
 
         // The backoff controls how many times Kafka will attempt to send the same request on a controller;
         // in this case, no additional attempts are allowed
-        container.setErrorHandler(SeekToCurrentErrorHandler(DeadLetterPublishingRecoverer(exceptionReplyTemplate) { _, _ ->
+        containerFactory.setErrorHandler(SeekToCurrentErrorHandler(DeadLetterPublishingRecoverer(exceptionReplyTemplate) { _, _ ->
             TopicPartition(
                 "exceptions",
                 0
             )
         }) { BackOffExecution { BackOffExecution.STOP } })
 
-        return container
+        val containerFactoryInitializationTimestamp = Instant.now().toEpochMilli()
+        containerFactory.setRecordFilterStrategy {
+            it.timestamp() < containerFactoryInitializationTimestamp
+        }
+        containerFactory.setAckDiscarded(true)
+
+        return containerFactory
     }
 
     @Bean
     fun performTransactionProducerFactory(): ProducerFactory<String, Long> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to LongSerializer::class.java
         )

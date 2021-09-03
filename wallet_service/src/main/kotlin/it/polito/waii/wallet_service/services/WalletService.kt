@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 interface WalletService {
 
     fun doRecharge(transaction: TransactionDTO): TransactionDTO
-    fun doRecharge(transaction: TransactionDTO, roles: String): TransactionDTO
+    fun doRecharge(transaction: TransactionDTO, username: String): TransactionDTO
 
     fun doCharge(transaction: TransactionDTO): TransactionDTO
     fun doCharge(transaction: TransactionDTO, username: String): TransactionDTO

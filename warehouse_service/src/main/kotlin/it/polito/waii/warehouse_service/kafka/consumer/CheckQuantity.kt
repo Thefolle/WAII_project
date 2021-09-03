@@ -16,33 +16,40 @@ import org.springframework.kafka.listener.SeekToCurrentErrorHandler
 import org.springframework.kafka.support.converter.MessageConverter
 import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.util.backoff.BackOffExecution
+import java.time.Instant
 
 @Configuration
 class CheckQuantity {
 
     @Bean
     fun updateQuantitiesConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<Any, Any>, messageConverter: MessageConverter, replyKafkaTemplate: KafkaTemplate<String, Float>, exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Any> {
-        val concurrentKafkaListenerContainerFactory = ConcurrentKafkaListenerContainerFactory<String, Any>()
-        concurrentKafkaListenerContainerFactory.consumerFactory = consumerFactory
-        concurrentKafkaListenerContainerFactory.setMessageConverter(messageConverter)
-        concurrentKafkaListenerContainerFactory.setReplyTemplate(replyKafkaTemplate)
+        val containerFactory = ConcurrentKafkaListenerContainerFactory<String, Any>()
+        containerFactory.consumerFactory = consumerFactory
+        containerFactory.setMessageConverter(messageConverter)
+        containerFactory.setReplyTemplate(replyKafkaTemplate)
 
         // The backoff controls how many times Kafka will attempt to send the same request on a controller;
         // in this case, no additional attempts are allowed
-        concurrentKafkaListenerContainerFactory.setErrorHandler(SeekToCurrentErrorHandler(DeadLetterPublishingRecoverer(exceptionReplyTemplate) { _, _ ->
+        containerFactory.setErrorHandler(SeekToCurrentErrorHandler(DeadLetterPublishingRecoverer(exceptionReplyTemplate) { _, _ ->
             TopicPartition(
                 "exceptions",
                 0
             )
         }) { BackOffExecution { BackOffExecution.STOP } })
 
-        return concurrentKafkaListenerContainerFactory
+        val containerFactoryInitializationTimestamp = Instant.now().toEpochMilli()
+        containerFactory.setRecordFilterStrategy {
+            it.timestamp() < containerFactoryInitializationTimestamp
+        }
+        containerFactory.setAckDiscarded(true)
+
+        return containerFactory
     }
 
     @Bean
     fun updateQuantityExceptionProducerFactory(): ProducerFactory<String, Any> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java
         )
@@ -58,7 +65,7 @@ class CheckQuantity {
     @Bean
     fun updateQuantityConsumerFactory(): ConsumerFactory<Any, Any> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.GROUP_ID_CONFIG to "warehouse_service_group_id",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
@@ -76,7 +83,7 @@ class CheckQuantity {
     @Bean
     fun updateQuantityProducerFactory(): ProducerFactory<String, Float> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to FloatSerializer::class.java
         )

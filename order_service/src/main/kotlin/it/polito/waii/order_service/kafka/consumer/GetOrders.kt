@@ -14,6 +14,7 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.*
 import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.kafka.support.serializer.JsonSerializer
+import java.time.Instant
 
 @Configuration
 class GetOrders {
@@ -21,7 +22,7 @@ class GetOrders {
     @Bean
     fun getOrdersConsumerFactory(): ConsumerFactory<String, Void> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.GROUP_ID_CONFIG to "order_service_group_id",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to VoidDeserializer::class.java,
@@ -34,17 +35,23 @@ class GetOrders {
 
     @Bean
     fun getOrdersConcurrentKafkaListenerContainerFactory(@Qualifier("getOrdersConsumerFactory") consumerFactory: ConsumerFactory<String, Void>, kafkaTemplate: KafkaTemplate<String, Set<OrderDto>>): ConcurrentKafkaListenerContainerFactory<String, Void> {
-        var container = ConcurrentKafkaListenerContainerFactory<String, Void>()
-        container.consumerFactory = consumerFactory
-        container.setReplyTemplate(kafkaTemplate)
+        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, Void>()
+        containerFactory.consumerFactory = consumerFactory
+        containerFactory.setReplyTemplate(kafkaTemplate)
 
-        return container
+        val containerFactoryInitializationTimestamp = Instant.now().toEpochMilli()
+        containerFactory.setRecordFilterStrategy {
+            it.timestamp() < containerFactoryInitializationTimestamp
+        }
+        containerFactory.setAckDiscarded(true)
+
+        return containerFactory
     }
 
     @Bean
     fun getOrdersProducerFactory(): ProducerFactory<String, Set<OrderDto>> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092"
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092"
         )
 
         val objectMapper = ObjectMapper()

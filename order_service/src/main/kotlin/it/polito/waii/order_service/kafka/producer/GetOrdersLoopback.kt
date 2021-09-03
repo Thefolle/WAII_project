@@ -21,6 +21,7 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.ConsumerAwareBatchErrorHandler
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.serializer.JsonDeserializer
+import java.time.Duration
 
 @Configuration
 class GetOrdersLoopback {
@@ -28,7 +29,7 @@ class GetOrdersLoopback {
     @Bean
     fun getOrdersLoopbackProducerFactory(): ProducerFactory<String, Void> {
         var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to VoidSerializer::class.java
         )
@@ -62,7 +63,7 @@ class GetOrdersLoopback {
     @Bean
     fun getOrdersLoopbackConsumerFactory(): ConsumerFactory<String, Set<OrderDto>> {
         var config = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "kafka:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.GROUP_ID_CONFIG to "order_service_group_id",
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest",
             JsonDeserializer.TRUSTED_PACKAGES to "*"
@@ -77,6 +78,8 @@ class GetOrdersLoopback {
     fun getOrdersLoopbackReplyingKafkaTemplate(@Qualifier("getOrdersLoopbackProducerFactory") producerFactory: ProducerFactory<String, Void>, @Qualifier("getOrdersLoopbackConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Set<OrderDto>>): ReplyingKafkaTemplate<String, Void, Set<OrderDto>> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
+        // don't use the replyTimeout parameter of sendAndReceive: it is neglected, probably for a bug
+        replyingKafkaTemplate.setDefaultReplyTimeout(Duration.ofSeconds(15))
         return replyingKafkaTemplate
     }
 

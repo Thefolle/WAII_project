@@ -78,6 +78,10 @@ class WarehouseServiceImpl : WarehouseService {
 
 
     override fun getWarehouseById(id: Long): WarehouseDto {
+        if (!warehouseRepository.existsById(id)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "No warehouse with id ${id} exists.")
+        }
+
         return warehouseRepository
             .findById(id)
             .get()
@@ -115,6 +119,10 @@ class WarehouseServiceImpl : WarehouseService {
 
 
     override fun updateWarehouse(id: Long, warehouseDto: PartialWarehouseDto) {
+        if (!warehouseRepository.existsById(id)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "No warehouse with id $id exists.")
+        }
+
         val warehouse = warehouseRepository.findById(id).get()
 
         if (warehouseDto.name != null) {
@@ -134,6 +142,10 @@ class WarehouseServiceImpl : WarehouseService {
 
 
     override fun deleteWarehouse(id: Long) {
+        if (!warehouseRepository.existsById(id)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "No warehouse with id $id exists.")
+        }
+
         warehouseRepository
             .deleteById(id)
     }
@@ -242,7 +254,6 @@ class WarehouseServiceImpl : WarehouseService {
                         .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
                         .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
                         .build(),
-                    Duration.ofSeconds(15),
                     ParameterizedTypeReference.forType<Set<String>>(type)
                 )
 
@@ -250,6 +261,7 @@ class WarehouseServiceImpl : WarehouseService {
         try {
             result = future.get().payload
         } catch (exception: Exception) {
+            // TODO
             throw UnsatisfiableRequestException("The emails couldn't be retrieved due to some" +
                     " failure of the following service: catalogue_service")
         }
