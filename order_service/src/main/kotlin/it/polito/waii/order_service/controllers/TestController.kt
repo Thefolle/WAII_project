@@ -1,6 +1,7 @@
 package it.polito.waii.order_service.controllers
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import it.polito.waii.order_service.dtos.InputOrderDto
 import it.polito.waii.order_service.dtos.OrderDto
 import it.polito.waii.order_service.dtos.PatchOrderDto
 import it.polito.waii.order_service.dtos.UserDTO
@@ -34,7 +35,7 @@ class TestController {
 
     @Autowired
     @Qualifier("createOrderLoopbackReplyingKafkaTemplate")
-    lateinit var stringOrderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDto, Long>
+    lateinit var stringOrderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, InputOrderDto, Long>
 
     @Autowired
     lateinit var stringLongOrderDtoReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Long, OrderDto>
@@ -46,7 +47,7 @@ class TestController {
     lateinit var stringLongVoidReplyingKafkaTemplate: ReplyingKafkaTemplate<String, Long, Void>
 
     @PostMapping
-    suspend fun createOrder(@Valid @RequestBody orderDto: OrderDto): String {
+    suspend fun createOrder(@Valid @RequestBody orderDto: InputOrderDto): String {
         var userDetails = extractPrincipalFromSecurityContext()
         val username = userDetails.username
         val roles = userDetails.authorities.joinToString(",") { it.authority }

@@ -1,6 +1,6 @@
 package it.polito.waii.order_service.kafka.producer
 
-import it.polito.waii.order_service.dtos.OrderDto
+import it.polito.waii.order_service.dtos.InputOrderDto
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.TopicPartition
@@ -25,7 +25,7 @@ import java.time.Duration
 class CreateOrderLoopback {
 
     @Bean
-    fun createOrderLoopbackProducerFactory(): ProducerFactory<String, OrderDto> {
+    fun createOrderLoopbackProducerFactory(): ProducerFactory<String, InputOrderDto> {
         var config = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
@@ -36,7 +36,7 @@ class CreateOrderLoopback {
     }
 
     @Bean
-    fun createOrderLoopbackKafkaTemplate(@Qualifier("createOrderLoopbackProducerFactory") producerFactory: ProducerFactory<String, OrderDto>): KafkaTemplate<String, OrderDto> {
+    fun createOrderLoopbackKafkaTemplate(@Qualifier("createOrderLoopbackProducerFactory") producerFactory: ProducerFactory<String, InputOrderDto>): KafkaTemplate<String, InputOrderDto> {
         return KafkaTemplate(producerFactory)
     }
 
@@ -80,7 +80,7 @@ class CreateOrderLoopback {
     }
 
     @Bean
-    fun createOrderLoopbackReplyingKafkaTemplate(@Qualifier("createOrderLoopbackProducerFactory") producerFactory: ProducerFactory<String, OrderDto>, @Qualifier("createOrderLoopbackConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, OrderDto, Long> {
+    fun createOrderLoopbackReplyingKafkaTemplate(@Qualifier("createOrderLoopbackProducerFactory") producerFactory: ProducerFactory<String, InputOrderDto>, @Qualifier("createOrderLoopbackConcurrentMessageListenerContainer") container: ConcurrentMessageListenerContainer<String, Long>): ReplyingKafkaTemplate<String, InputOrderDto, Long> {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
         // don't use the replyTimeout parameter of sendAndReceive: it is neglected, probably for a bug

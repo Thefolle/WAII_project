@@ -26,8 +26,7 @@ class GetOrders {
             ConsumerConfig.GROUP_ID_CONFIG to "order_service_group_id",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to VoidDeserializer::class.java,
-            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest",
-            JsonDeserializer.TRUSTED_PACKAGES to "*"
+            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest"
         )
 
         return DefaultKafkaConsumerFactory(config)

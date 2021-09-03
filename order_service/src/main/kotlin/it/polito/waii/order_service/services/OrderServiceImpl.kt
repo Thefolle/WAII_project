@@ -1,5 +1,6 @@
 package it.polito.waii.order_service.services
 
+import it.polito.waii.order_service.dtos.InputOrderDto
 import it.polito.waii.order_service.dtos.OrderDto
 import it.polito.waii.order_service.dtos.OrderDtoOrchestrator
 import it.polito.waii.order_service.dtos.PatchOrderDto
@@ -39,7 +40,7 @@ class OrderServiceImpl : OrderService {
     lateinit var orderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDtoOrchestrator, Float>
 
     @Transactional
-    override suspend fun createOrder(orderDto: OrderDto, username: String, roles: String): Long {
+    override suspend fun createOrder(orderDto: InputOrderDto, username: String, roles: String): Long {
 
         if (orderDto.deliveries.keys != orderDto.quantities.keys) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "The set of products in deliveries must equal the set " +
@@ -67,7 +68,8 @@ class OrderServiceImpl : OrderService {
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
         correlationId.putInt(0)
 
-        val orderDtoOrchestrator = orderDto.toOrderDtoOrchestrator(true)
+        val newOrder = Order(null, customer, wallet, deliveries, 0f, OrderStatus.ISSUED)
+        val orderDtoOrchestrator = newOrder.toDto().toOrderDtoOrchestrator(true)
 
         val future =
             orderDtoLongReplyingKafkaTemplate
@@ -106,8 +108,10 @@ class OrderServiceImpl : OrderService {
             )
         }
 
+        newOrder.total = totalPrice
+
         return orderRepository
-            .save(Order(null, customer, wallet, deliveries, totalPrice, OrderStatus.ISSUED))
+            .save(newOrder)
             .map { it.id }
             .awaitSingle()!!
 

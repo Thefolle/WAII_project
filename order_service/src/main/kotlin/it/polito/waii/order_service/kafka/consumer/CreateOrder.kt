@@ -1,6 +1,6 @@
 package it.polito.waii.order_service.kafka.consumer
 
-import it.polito.waii.order_service.dtos.OrderDto
+import it.polito.waii.order_service.dtos.InputOrderDto
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.TopicPartition
@@ -23,7 +23,7 @@ import java.time.Instant
 class CreateOrder {
 
     @Bean
-    fun createOrderConsumerFactory(): ConsumerFactory<String, OrderDto> {
+    fun createOrderConsumerFactory(): ConsumerFactory<String, InputOrderDto> {
         var config = mapOf(
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
@@ -37,8 +37,8 @@ class CreateOrder {
     }
 
     @Bean
-    fun createOrderConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderConsumerFactory") consumerFactory: ConsumerFactory<String, OrderDto>, @Qualifier("createOrderKafkaTemplate") kafkaTemplate: KafkaTemplate<String, Long>, @Qualifier("createOrderExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, OrderDto> {
-        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, OrderDto>()
+    fun createOrderConcurrentKafkaListenerContainerFactory(@Qualifier("createOrderConsumerFactory") consumerFactory: ConsumerFactory<String, InputOrderDto>, @Qualifier("createOrderKafkaTemplate") kafkaTemplate: KafkaTemplate<String, Long>, @Qualifier("createOrderExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, InputOrderDto> {
+        var containerFactory = ConcurrentKafkaListenerContainerFactory<String, InputOrderDto>()
         containerFactory.consumerFactory = consumerFactory
         containerFactory.setReplyTemplate(kafkaTemplate)
 

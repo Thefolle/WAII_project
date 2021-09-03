@@ -1,5 +1,6 @@
 package it.polito.waii.order_service.controllers
 
+import it.polito.waii.order_service.dtos.InputOrderDto
 import it.polito.waii.order_service.dtos.OrderDto
 import it.polito.waii.order_service.dtos.PatchOrderDto
 import it.polito.waii.order_service.services.OrderService
@@ -47,7 +48,7 @@ class OrderController {
         containerFactory = "createOrderConcurrentKafkaListenerContainerFactory",
         topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["0"])]
     )
-    fun createOrder(orderDto: OrderDto, @Header("username") username: String, @Header("roles") roles: String): Message<Long> =
+    fun createOrder(orderDto: InputOrderDto, @Header("username") username: String, @Header("roles") roles: String): Message<Long> =
 
         runBlocking(Dispatchers.IO) {
 
