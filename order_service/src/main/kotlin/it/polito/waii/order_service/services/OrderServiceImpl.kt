@@ -181,6 +181,10 @@ class OrderServiceImpl : OrderService {
 
         // check status
         if (orderDto.status != null && orderDto.status != oldOrder.status) {
+            if (orderDto.walletId != null || orderDto.deliveries != null || orderDto.quantities != null) {
+                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot modify the order's status and its data" +
+                        " at the same time!")
+            }
             updateOrderStatus(orderDto, oldOrder)
             // if the status has been correctly modified, data cannot be changed
             if (oldOrder.status != OrderStatus.ISSUED) {
@@ -203,11 +207,8 @@ class OrderServiceImpl : OrderService {
                 "The order data cannot be updated anymore, since it is ${oldOrder.status.toString().lowercase()}")
         }
 
-
-        // exploit the delivery id to identify a delivery rather than its product id, so that the user can change the product of an order too
-        // the disadvantage of this solution is that, in case the user wants to modify only the quantity of a product, he has to specify the pertinent delivery
         var deliveries = orderDto.deliveries?.map {
-            val isNew = it.value.id == null
+            val isNew = oldOrder.deliveries.none { delivery -> delivery.product.id == it.key }
             if (isNew) {
                 try {
                     Delivery(
@@ -224,9 +225,11 @@ class OrderServiceImpl : OrderService {
             } else {
                 var oldDelivery: Delivery
                 try {
-                    oldDelivery = oldOrder.deliveries.find { innerIt -> innerIt.id == it.value.id }!!
+                    oldDelivery = oldOrder.deliveries.find { oldDelivery -> oldDelivery.product.id == it.key }!!
                 } catch (exception: Exception) {
-                    throw ResponseStatusException(HttpStatus.NOT_FOUND, "No delivery with id ${it.value.id} exists. If you want to create a new delivery, don't specify the id.")
+                    // never thrown
+                    throw ResponseStatusException(HttpStatus.NOT_FOUND, "No delivery for the product with " +
+                            "id ${it.key} exists.")
                 }
 
                 val isWarehouseChanged = it.value.warehouseId != null
@@ -234,7 +237,7 @@ class OrderServiceImpl : OrderService {
                 val newWarehouseId = it.value.warehouseId
                 if (isWarehouseChanged) {
                     orderRepository
-                        .detachWarehouse(it.value.id!!, oldWarehouseId!!)
+                        .detachWarehouse(oldDelivery.id!!, oldWarehouseId!!)
                         .awaitSingleOrNull()
                     orderRepository
                         .deleteWarehouseIfIsolated(oldWarehouseId)
@@ -246,7 +249,7 @@ class OrderServiceImpl : OrderService {
                 val newProductId = it.key
                 if (isProductChanged) {
                     orderRepository
-                        .detachProduct(it.value.id!!, oldProductId!!)
+                        .detachProduct(oldDelivery.id!!, oldProductId!!)
                         .awaitSingleOrNull()
                     orderRepository
                         .deleteProductIfIsolated(oldProductId)
@@ -254,7 +257,7 @@ class OrderServiceImpl : OrderService {
                 }
 
                 val delivery = Delivery(
-                    it.value.id,
+                    oldDelivery.id!!,
                     it.value.shippingAddress ?: oldDelivery.shippingAddress,
                     Warehouse(if (isWarehouseChanged) newWarehouseId else oldWarehouseId),
                     Product(if (isProductChanged) newProductId else oldProductId),
@@ -266,8 +269,39 @@ class OrderServiceImpl : OrderService {
         }
             ?.toSet()
 
+        var otherDeliveries = orderDto.quantities?.map {
+            val wasNew = oldOrder.deliveries.none { delivery -> delivery.product.id == it.key }
+            if (wasNew) {
+                null
+            } else {
+                val oldDelivery: Delivery?
+                try {
+                    oldDelivery = oldOrder.deliveries.find { oldDelivery -> oldDelivery.product.id == it.key }
+                } catch (exception: Exception) {
+                    // never thrown
+                    throw ResponseStatusException(HttpStatus.NOT_FOUND, "No delivery for the product with " +
+                            "id ${it.key} exists.")
+                }
+
+                val delivery = Delivery(
+                    oldDelivery!!.id!!,
+                    oldDelivery.shippingAddress,
+                    oldDelivery.warehouse,
+                    oldDelivery.product,
+                    it.value
+                )
+
+                delivery
+            }
+
+        }
+            ?.filterNotNull()?.toSet()
+
+        deliveries = otherDeliveries?.plus(deliveries ?: setOf()) ?: deliveries
+
         val untouchedDeliveries = oldOrder.deliveries.filter { oldDelivery -> deliveries?.none { oldDelivery.id == it.id } ?: false }
         deliveries = deliveries?.plus(untouchedDeliveries)
+
 
         val isWalletChanged = orderDto.walletId != null
         val oldWalletId = oldOrder.wallet.id
@@ -290,6 +324,12 @@ class OrderServiceImpl : OrderService {
                 oldOrder.total, // this value will remain the same if only the order status changed
                 orderDto.status ?: oldOrder.status
             )
+
+        val orphanQuantities = orderDto.quantities?.keys?.filter { productId -> newOrder.deliveries.none { delivery -> delivery.product.id == productId } }
+        if (orphanQuantities?.isNotEmpty() == true) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "You have specified quantities for products that " +
+                    "you haven't bought. The associated product ids are: ${orphanQuantities.joinToString()}.")
+        }
 
 
         if (isWalletChanged || deliveries != null) {

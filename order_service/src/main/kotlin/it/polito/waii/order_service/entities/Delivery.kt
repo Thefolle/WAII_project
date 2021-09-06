@@ -15,11 +15,10 @@ data class Delivery(
     val shippingAddress: String,
     val warehouse: Warehouse,
     val product: Product,
-    val quantity: Long
+    var quantity: Long
 ) {
 
     fun toDto() = DeliveryDto(
-        id,
         shippingAddress,
         warehouse.id!!
     )
