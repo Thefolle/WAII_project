@@ -178,4 +178,29 @@ class OrderController {
             }
 
         }
+
+
+    @SendTo("order_service_responses")
+    @KafkaListener(
+        containerFactory = "hasProductBeenBoughtByCustomerConcurrentKafkaListenerContainerFactory",
+        topicPartitions = [TopicPartition(topic = "order_service_requests", partitions = ["5"])]
+    )
+    fun hasProductBeenBoughtByCustomer(productId: Long, @Header("username") username: String): Message<Boolean> =
+        runBlocking(Dispatchers.IO) {
+            try {
+                val response = orderService.hasProductBeenBoughtByCustomer(username, productId)
+                MessageBuilder
+                    .withPayload(response)
+                    .setHeader("hasException", false)
+                    .build()
+            } catch (exception: ResponseStatusException) {
+                MessageBuilder
+                    .withPayload(false)
+                    .setHeader("hasException", true)
+                    .setHeader("exceptionMessage", exception.reason)
+                    .setHeader("exceptionRawStatus", exception.status.value())
+                    .build()
+            }
+
+        }
     }

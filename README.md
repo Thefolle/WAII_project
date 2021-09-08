@@ -27,7 +27,6 @@ The first two beans configure a producer, whereas KafkaTemplate is used to send 
     @Bean
     fun producerFactory(): ProducerFactory<String, String> {
         var config = mapOf(
-            Pair(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"),
             Pair(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java),
             Pair(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java)
         )
@@ -58,7 +57,7 @@ class KafkaConfiguration {
     @Bean
     fun consumerFactory(): ConsumerFactory<String, OrderDto> {
         var config = mapOf(
-            Pair(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"),
+            
             Pair(ConsumerConfig.GROUP_ID_CONFIG, "OrderGroupId"),
             Pair(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer::class.java),
             Pair(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer::class.java),

@@ -23,7 +23,7 @@ class Product(
     @OneToMany(mappedBy = "product")
     var comments : MutableSet<Comment>? = mutableSetOf(),
 
-    var pictureURI: String? = "",
+    var pictureURI: String?,
 
 
     @OneToMany(mappedBy = "warehouse")

@@ -19,7 +19,7 @@ class OrderDto(
     constructor() : this(null, 0, mapOf(), mapOf(), 0f, null)
 
     fun toOrderDtoOrchestrator(isIssuingOrCancelling: Boolean) = OrderDtoOrchestrator(
-        id,
+        id!!,
         walletId,
         deliveries,
         quantities,

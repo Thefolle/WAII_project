@@ -1,8 +1,6 @@
 package it.polito.waii.warehouse_service.controllers
 
-import it.polito.waii.warehouse_service.dtos.PatchProductDTO
-import it.polito.waii.warehouse_service.dtos.ProductDTO
-import it.polito.waii.warehouse_service.dtos.WarehouseDto
+import it.polito.waii.warehouse_service.dtos.*
 import it.polito.waii.warehouse_service.services.ProductServiceImpl
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -44,7 +42,7 @@ class ProductController(val productServiceImpl: ProductServiceImpl) {
         return ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getProductPicture(productId))
     }
 
-    @PostMapping("/{productId}/picture")
+    @PutMapping("/{productId}/picture")
     fun updateProductPicture(@PathVariable("productId") productId: Long, @RequestBody pictureURI: String): ResponseEntity<String>{
         productServiceImpl.updateProductPicture(productId, pictureURI)
         return ResponseEntity.status(HttpStatus.OK).body("Product picture updated successfully!")
@@ -53,6 +51,32 @@ class ProductController(val productServiceImpl: ProductServiceImpl) {
     @GetMapping("/{productId}/warehouses")
     fun getWarehouses(@PathVariable("productId") productId: Long) : ResponseEntity<List<WarehouseDto>> {
         return ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getWarehouses(productId))
+    }
+
+    @PostMapping("/{productId}/comments")
+    fun addComment(@PathVariable("productId") productId: Long, @RequestBody commentDto: CommentDTO): ResponseEntity<String> {
+        val commentId = productServiceImpl.addComment(productId, commentDto)
+
+        return ResponseEntity.status(HttpStatus.OK).body("The comment has been correctly stored with id $commentId")
+    }
+
+    @GetMapping("/{productId}/comments")
+    fun getComments(@PathVariable("productId") productId: Long): ResponseEntity<List<CommentDTO>> {
+        return ResponseEntity.status(HttpStatus.OK).body(productServiceImpl.getComments(productId))
+    }
+
+    @DeleteMapping("/{productId}/comments/{commentId}")
+    fun deleteComment(@PathVariable("productId") productId: Long, @PathVariable("commentId") commentId: Long): ResponseEntity<String> {
+        productServiceImpl.deleteComment(productId, commentId)
+
+        return ResponseEntity.status(HttpStatus.OK).body("The comment has been correctly deleted.")
+    }
+
+    @PutMapping("/{productId}/comments/{commentId}")
+    fun updateComment(@PathVariable("productId") productId: Long, @PathVariable("commentId") commentId: Long, @RequestBody comment: UpdateCommentDto): ResponseEntity<String> {
+        productServiceImpl.updateComment(productId, commentId, comment)
+
+        return ResponseEntity.status(HttpStatus.OK).body("The comment has been correctly updated.")
     }
 
 }

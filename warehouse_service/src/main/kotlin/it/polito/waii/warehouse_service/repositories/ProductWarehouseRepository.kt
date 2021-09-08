@@ -16,4 +16,6 @@ interface ProductWarehouseRepository : CrudRepository<ProductWarehouse, Composit
 
     fun findByCompositeKey(compositeKey: CompositeKey): Optional<ProductWarehouse>
 
+    fun existsByProductId(productId: Long): Boolean
+
 }

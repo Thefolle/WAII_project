@@ -26,7 +26,7 @@ class WebSecurityConfig(val jwtAuthenticationTokenFilter: JwtAuthenticationToken
             .csrf().disable()
             .httpBasic().disable()
             .securityContextRepository(NoOpServerSecurityContextRepository.getInstance()) // stateless session management
-            .authorizeExchange { it.anyExchange().permitAll() }
+            .authorizeExchange { it.anyExchange().authenticated() }
             .addFilterAt(jwtAuthenticationTokenFilter, SecurityWebFiltersOrder.HTTP_BASIC)
             .build()
 

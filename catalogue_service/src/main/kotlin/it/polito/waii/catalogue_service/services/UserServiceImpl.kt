@@ -97,13 +97,13 @@ class UserServiceImpl(val userRepository: UserRepository,
         user.removeRole(role)
     }
 
-    //@Secured("ADMIN")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun enable(username: String) {
         val user = getUserByUsername(username)
         user.isEnabled = true
     }
 
-    //@Secured("ADMIN")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun disable(username: String) {
         val user = getUserByUsername(username)
         user.isEnabled = false
@@ -183,5 +183,14 @@ class UserServiceImpl(val userRepository: UserRepository,
                     .email
             }
             .toSet()
+    }
+
+    override fun getUserEmail(username: String): String {
+        val eventualUser = userRepository.findByUsername(username)
+        if (eventualUser.isEmpty) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "No user with username $username exists.")
+        } else {
+            return eventualUser.get().email
+        }
     }
 }

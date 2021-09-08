@@ -81,8 +81,7 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                 totalPrice,
                 null,
                 !orderDtoOrchestrator.isIssuingOrCancelling,
-                // for now this is null: modify order_service to first save the order, as Saga requires
-                orderDtoOrchestrator.id,
+                orderDtoOrchestrator.orderId,
                 null
             )
 

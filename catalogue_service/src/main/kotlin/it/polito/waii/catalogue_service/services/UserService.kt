@@ -33,4 +33,6 @@ interface UserService: UserDetailsService {
     fun updateUserInfo(update: UpdateUserDTO): UserDTO
 
     fun getAllAdminEmails(): Set<String>
+
+    fun getUserEmail(username: String): String
 }

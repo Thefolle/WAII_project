@@ -1,6 +1,7 @@
 package it.polito.waii.warehouse_service.services
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import it.polito.waii.warehouse_service.dtos.*
 import it.polito.waii.warehouse_service.entities.*
 import it.polito.waii.warehouse_service.exceptions.UnsatisfiableRequestException
@@ -14,13 +15,18 @@ import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.requestreply.RequestReplyTypedMessageFuture
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.kafka.support.KafkaNull
+import org.springframework.messaging.Message
 import org.springframework.messaging.support.MessageBuilder
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.time.Duration
+import java.util.concurrent.Future
+import java.util.concurrent.FutureTask
+import kotlin.concurrent.thread
 
 @Service
 @Transactional
@@ -52,6 +58,7 @@ class WarehouseServiceImpl : WarehouseService {
         return productWarehouseOptional.get()
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun createWarehouse(warehouseDto: WarehouseDto): Long {
         return warehouseRepository.save(
             Warehouse(
@@ -88,7 +95,7 @@ class WarehouseServiceImpl : WarehouseService {
             .toDto()
     }
 
-
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun updateWarehouse(id: Long, warehouseDto: WarehouseDto): Long? {
         return if (warehouseRepository.existsById(id)) {
             warehouseRepository.save(
@@ -117,7 +124,7 @@ class WarehouseServiceImpl : WarehouseService {
         }
     }
 
-
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun updateWarehouse(id: Long, warehouseDto: PartialWarehouseDto) {
         if (!warehouseRepository.existsById(id)) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "No warehouse with id $id exists.")
@@ -140,7 +147,7 @@ class WarehouseServiceImpl : WarehouseService {
 
     }
 
-
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun deleteWarehouse(id: Long) {
         if (!warehouseRepository.existsById(id)) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "No warehouse with id $id exists.")
@@ -171,6 +178,7 @@ class WarehouseServiceImpl : WarehouseService {
         return productWarehouseRepository.findAll().map { ProductQuantityDTO(it.product.name, it.quantity) }
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun updateProductQuantity(warehouseId: Long, updateQuantityDTO: UpdateQuantityDTO): Float {
 
         if (warehouseRepository.findById(warehouseId).isEmpty) throw ResponseStatusException(
@@ -219,16 +227,36 @@ class WarehouseServiceImpl : WarehouseService {
             )
 
             productWarehouse.quantity -= updateQuantityDTO.quantity
-            if (productWarehouse.quantity < productWarehouse.alarmLevel){
-                sendAlarmLevelReachedByEmail(
-                    productWarehouse.alarmLevel,
-                    productWarehouse.product.name,
-                    productWarehouse.product.id!!
-                )
+            if (productWarehouse.quantity < productWarehouse.alarmLevel) {
+                thread(start = true) {
+                    sendAlarmLevelReachedByEmail(
+                        productWarehouse.alarmLevel,
+                        productWarehouse.product.name,
+                        productWarehouse.product.id!!
+                    )
+                }
+            }
+            if (productWarehouse.quantity == 0L) {
+                productWarehouseRepository.delete(productWarehouse)
             }
         }
 
          return product.price * updateQuantityDTO.quantity
+    }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    override fun updateProductAlarmLevel(warehouseId: Long, productId: Long, newAlarmLevel: Long): ProductWarehouseDTO {
+        val productWarehouse = getProductWarehouseById(productId, warehouseId)
+        productWarehouse.alarmLevel = newAlarmLevel
+        if (productWarehouse.quantity < productWarehouse.alarmLevel){
+            sendAlarmLevelReachedByEmail(
+                productWarehouse.alarmLevel,
+                productWarehouse.product.name,
+                productWarehouse.product.id!!
+            )
+        }
+
+        return productWarehouse.toDTO()
     }
 
     private fun getAllAdminEmails(): Set<String> {
@@ -257,16 +285,22 @@ class WarehouseServiceImpl : WarehouseService {
                     ParameterizedTypeReference.forType<Set<String>>(type)
                 )
 
-        var result: Set<String>
+        var response: Message<Set<String>>
         try {
-            result = future.get().payload
+            response = future.get()
         } catch (exception: Exception) {
-            // TODO
-            throw UnsatisfiableRequestException("The emails couldn't be retrieved due to some" +
-                    " failure of the following service: catalogue_service")
+            throw ResponseStatusException(HttpStatus.REQUEST_TIMEOUT, "The request cannot be processed due to some " +
+                    "malfunction. Please, try later.")
         }
 
-        return result
+        if ((response.headers["hasException"] as Boolean)) {
+            throw ResponseStatusException(
+                HttpStatus.valueOf(response.headers["exceptionRawStatus"] as Int),
+                response.headers["exceptionMessage"] as String
+            )
+        }
+
+        return response.payload
     }
 
     override fun updateProductQuantities(updateQuantitiesDTO: Set<UpdateQuantityDtoKafka>): Float {
@@ -283,35 +317,23 @@ class WarehouseServiceImpl : WarehouseService {
     private fun sendAlarmLevelReachedByEmail(alarmLevel: Long, productName: String, productId: Long) {
         try {
             val emails = getAllAdminEmails()
-            println("Emails: $emails")
             emails.forEach {
                 mailService
                     .sendMessage(
                         it,
                         "Alarm level reached",
-                        "The alarm level of $alarmLevel" +
-                                " for product $productName" +
+                        "The alarm level ($alarmLevel)" +
+                                " for product \"$productName\"" +
                                 " with id $productId" +
-                                " has been reached."
+                                " has been reached!"
                     )
             }
         } catch (exception: Exception) {
-            println(exception.message)
+            throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "The mail service is currently unavailable." +
+                    " Please, try later.", exception)
         }
     }
 
-    override fun updateProductAlarmLevel(warehouseId: Long, productId: Long, newAlarmLevel: Long): ProductWarehouseDTO {
-        val productWarehouse = getProductWarehouseById(productId, warehouseId)
-        productWarehouse.alarmLevel = newAlarmLevel
-        if (productWarehouse.quantity < productWarehouse.alarmLevel){
-            sendAlarmLevelReachedByEmail(
-                productWarehouse.alarmLevel,
-                productWarehouse.product.name,
-                productWarehouse.product.id!!
-            )
-        }
 
-        return productWarehouse.toDTO()
-    }
 
 }

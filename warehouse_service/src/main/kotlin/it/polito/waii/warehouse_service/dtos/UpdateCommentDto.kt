@@ -1,11 +1,7 @@
 package it.polito.waii.warehouse_service.dtos
 
-import java.time.LocalDateTime
-
-class CommentDTO (
-    var id: Long?,
+class UpdateCommentDto(
     var title: String,
     var body: String,
     var stars: Int,
-    var creationDate: LocalDateTime?
 )

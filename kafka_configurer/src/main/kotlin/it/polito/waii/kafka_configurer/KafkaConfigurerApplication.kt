@@ -10,7 +10,7 @@ class KafkaConfigurerApplication {
 
     @Bean
     fun orderServiceRequestsTopic(): NewTopic {
-        return NewTopic("order_service_requests", 5, 1)
+        return NewTopic("order_service_requests", 6, 1)
     }
 
     @Bean
@@ -50,12 +50,12 @@ class KafkaConfigurerApplication {
 
     @Bean
     fun catalogueServiceRequestsTopic(): NewTopic {
-        return NewTopic("catalogue_service_requests", 1, 1)
+        return NewTopic("catalogue_service_requests", 2, 1)
     }
 
     @Bean
     fun catalogueServiceResponsesTopic(): NewTopic {
-        return NewTopic("catalogue_service_responses", 1, 1)
+        return NewTopic("catalogue_service_responses", 2, 1)
     }
 
     @Bean

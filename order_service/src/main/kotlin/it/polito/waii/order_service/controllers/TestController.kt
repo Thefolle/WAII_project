@@ -52,6 +52,10 @@ class TestController {
         val username = userDetails.username
         val roles = userDetails.authorities.joinToString(",") { it.authority }
 
+        if (orderDto.quantities.values.any { it < 0 }) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantities must all be positive.")
+        }
+
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
         replyPartition.putInt(0)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
@@ -174,6 +178,8 @@ class TestController {
         } else if (id != orderDto.id) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "The order id in the URI and in the request body" +
                     " must match.")
+        } else if (orderDto.quantities != null && orderDto.quantities.values.any { it < 0 }) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantities must all be positive.")
         }
 
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)

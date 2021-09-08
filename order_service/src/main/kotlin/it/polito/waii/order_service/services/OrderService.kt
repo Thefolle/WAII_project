@@ -17,5 +17,5 @@ interface OrderService {
     suspend fun updateOrder(orderDto: PatchOrderDto, username: String, roles: String)
     suspend fun deleteOrderById(id: Long, username: String, roles: String)
 
-
+    suspend fun hasProductBeenBoughtByCustomer(username: String, productId: Long): Boolean
 }

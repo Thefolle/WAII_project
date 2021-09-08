@@ -18,6 +18,7 @@ import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 import org.springframework.context.annotation.Bean
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.JavaMailSenderImpl
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import java.time.LocalDateTime
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.crypto.factory.PasswordEncoderFactories
@@ -26,7 +27,6 @@ import org.springframework.security.web.AuthenticationEntryPoint
 import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
-
 
 @SpringBootApplication
 @EnableEurekaClient
@@ -39,43 +39,47 @@ class WarehouseServiceApplication {
     lateinit var warehouseService: WarehouseService
 
     @Bean
-    fun runner(): ApplicationRunner = ApplicationRunner {
-        val productId = productService
-            .addProduct(
-                ProductDTO(
-                    null,
-                    "pumpkin seeds",
-                    "Tasty",
-                    "dry fruit",
-                    LocalDateTime.now(),
-                    1.5f,
-                    null,
-                    "www.shutterstock.com/dry_fruits/seeds"
+    fun runner(productRepository: ProductRepository, warehouseRepository: WarehouseRepository, productWarehouseRepository: ProductWarehouseRepository): ApplicationRunner = ApplicationRunner {
+        val product =
+            productRepository
+                .save(
+                    Product(
+                        null,
+                        "pumpkin seeds",
+                        "Tasty",
+                        "dry fruit",
+                        LocalDateTime.now(),
+                        1.5f,
+                        0f,
+                        null,
+                        null
+                    )
                 )
-            )
-            .id!!
 
-        val warehouseId = warehouseService
-            .createWarehouse(
-                WarehouseDto(
-                    null,
-                    "super warehouse",
-                    "Reggio Calabria",
-                    "Calabria",
-                    100,
-                    null
+        val warehouse =
+            warehouseRepository
+                .save(
+                    Warehouse(
+                        null,
+                        "super warehouse",
+                        "Reggio Calabria",
+                        "Calabria",
+                        100,
+                        null
+                    )
+                )
+
+        productWarehouseRepository
+            .save(
+                ProductWarehouse(
+                    CompositeKey(product.id!!, warehouse.id!!),
+                    product,
+                    warehouse,
+                    15L,
+                    10
                 )
             )
 
-        warehouseService
-            .updateProductQuantity(
-                warehouseId,
-                UpdateQuantityDTO(
-                    productId,
-                    15,
-                    Action.ADD
-                )
-            )
     }
 
     @Bean

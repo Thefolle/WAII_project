@@ -2,6 +2,7 @@ package it.polito.waii.order_service.kafka.consumer
 
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
@@ -12,7 +13,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory
 class ExceptionLogging {
 
     @Bean
-    fun exceptionsConcurrentKafkaListenerContainerFactory(consumerFactory: ConsumerFactory<String, String>): ConcurrentKafkaListenerContainerFactory<String, String> {
+    fun exceptionsConcurrentKafkaListenerContainerFactory(@Qualifier("exceptionsOrderConsumerFactory") consumerFactory: ConsumerFactory<String, String>): ConcurrentKafkaListenerContainerFactory<String, String> {
         var container = ConcurrentKafkaListenerContainerFactory<String, String>()
         container.consumerFactory = consumerFactory
 

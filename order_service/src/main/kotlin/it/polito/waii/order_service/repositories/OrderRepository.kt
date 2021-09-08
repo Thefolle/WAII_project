@@ -99,4 +99,15 @@ interface OrderRepository: ReactiveNeo4jRepository<Order, Long> {
 
     override fun findById(id: Long): Mono<Order>
 
+    /***
+     * @return false if the customer have never bought the product
+     */
+    @Query(
+        "optional match (customer:Customer {id: \$username})\n" +
+                "optional match p=(customer)-[]-(orders:Order)-[]-(deliveries:Delivery)-[]-(products:Product)\n" +
+                "where products.id=\$productId\n" +
+                "return products is not null"
+    )
+    fun hasProductBeenBoughtByCustomer(@Param("username") username: String, @Param("productId") productId: Long): Mono<Boolean>
+
 }

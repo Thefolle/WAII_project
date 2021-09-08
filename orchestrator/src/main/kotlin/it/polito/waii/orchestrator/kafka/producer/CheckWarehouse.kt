@@ -32,8 +32,8 @@ class CheckWarehouse {
 
     @Bean
     fun checkWarehouseProducerFactory(): ProducerFactory<String, Set<UpdateQuantityDtoKafka>> {
-        var config = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092"
+        var config = mapOf<String, String>(
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
         )
 
         val objectMapper = ObjectMapper()

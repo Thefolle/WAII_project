@@ -16,18 +16,18 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpStatus
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
 import org.springframework.kafka.support.KafkaHeaders
+import org.springframework.mail.MailException
+import org.springframework.mail.MailSender
+import org.springframework.mail.SimpleMailMessage
 import org.springframework.messaging.Message
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.messaging.support.MessageBuilder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
-import reactor.core.publisher.Mono
 import reactor.core.publisher.Flux
-import java.lang.NullPointerException
 import java.nio.ByteBuffer
-import java.time.Duration
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.*
 
 @Service
 class OrderServiceImpl : OrderService {
@@ -36,11 +36,17 @@ class OrderServiceImpl : OrderService {
     lateinit var orderRepository: OrderRepository
 
     @Autowired
+    lateinit var mailSender: MailSender
+
+    @Autowired
     @Qualifier("createOrderToOrchestratorReplyingKafkaTemplate")
     lateinit var orderDtoLongReplyingKafkaTemplate: ReplyingKafkaTemplate<String, OrderDtoOrchestrator, Float>
 
+    @Autowired
+    lateinit var getUserEmailReplyingKafkaTemplate: ReplyingKafkaTemplate<String, String, String>
+
     @Transactional
-    override suspend fun createOrder(orderDto: InputOrderDto, username: String, roles: String): Long {
+    override suspend fun createOrder(orderDto: InputOrderDto, username: String, roles: String): Long = coroutineScope {
 
         if (orderDto.deliveries.keys != orderDto.quantities.keys) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "The set of products in deliveries must equal the set " +
@@ -68,7 +74,7 @@ class OrderServiceImpl : OrderService {
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
         correlationId.putInt(0)
 
-        val newOrder = Order(null, customer, wallet, deliveries, 0f, OrderStatus.ISSUED)
+        var newOrder = orderRepository.save(Order(null, customer, wallet, deliveries, 0f, OrderStatus.ISSUED)).awaitSingle()
         val orderDtoOrchestrator = newOrder.toDto().toOrderDtoOrchestrator(true)
 
         val future =
@@ -110,10 +116,19 @@ class OrderServiceImpl : OrderService {
 
         newOrder.total = totalPrice
 
-        return orderRepository
+        orderRepository
             .save(newOrder)
-            .map { it.id }
             .awaitSingle()!!
+
+
+        launch {
+            val email = getUserEmail(username)
+            sendMessage(email, "Confirmation email", "The order with id ${newOrder.id} has been correctly" +
+                    " created. You can view the order details at:\n" +
+                    " http://localhost:8080/orders/${newOrder.id}")
+        }
+
+        newOrder.id!!
 
     }
 
@@ -167,7 +182,7 @@ class OrderServiceImpl : OrderService {
     }
 
     @Transactional
-    override suspend fun updateOrder(orderDto: PatchOrderDto, username: String, roles: String) {
+    override suspend fun updateOrder(orderDto: PatchOrderDto, username: String, roles: String) = coroutineScope {
 
         var oldOrder: Order
         try {
@@ -177,6 +192,10 @@ class OrderServiceImpl : OrderService {
                     .awaitSingle()
         } catch (exception: NoSuchElementException) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "No order with id ${orderDto.id} exists.")
+        }
+
+        if (oldOrder.buyer.id != username) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot modify this order since it is not yours.")
         }
 
         // check status
@@ -198,7 +217,14 @@ class OrderServiceImpl : OrderService {
                     propagateUpdateMoneyAndProducts(oldOrder, username, roles, false)
                 }
 
-                return
+                launch {
+                    val email = getUserEmail(username)
+                    sendMessage(email, "Confirmation email", "The order with id ${orderDto.id} has been correctly" +
+                            " updated. You can view the order details at:\n" +
+                            " http://localhost:8080/orders/${orderDto.id}")
+                }
+
+                return@coroutineScope
             }
         }
         // cannot modify data if status is not issued
@@ -348,6 +374,13 @@ class OrderServiceImpl : OrderService {
                 newOrder
             )
             .awaitSingle()
+
+        launch {
+            val email = getUserEmail(username)
+            sendMessage(email, "Confirmation email", "The order with id ${orderDto.id} has been correctly" +
+                    " updated. You can view the order details at:\n" +
+                    " http://localhost:8080/orders/${orderDto.id}")
+        }
     }
 
     private fun propagateUpdateMoneyAndProducts(oldOrder: Order, username: String, roles: String, takeOrPut: Boolean): Float {
@@ -417,6 +450,69 @@ class OrderServiceImpl : OrderService {
 //        orderRepository
 //            .deleteById(id)
 //            .awaitSingle()
+    }
+
+    override suspend fun hasProductBeenBoughtByCustomer(username: String, productId: Long): Boolean {
+        return orderRepository
+            .hasProductBeenBoughtByCustomer(username, productId)
+            .awaitSingle()
+    }
+
+    private fun getUserEmail(username: String): String {
+        val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
+        replyPartition.putInt(1)
+        val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
+        correlationId.putInt(2)
+
+        var future =
+            getUserEmailReplyingKafkaTemplate
+                .sendAndReceive(
+                    MessageBuilder
+                        .withPayload(
+                            username
+                        )
+                        .setHeader(KafkaHeaders.TOPIC, "catalogue_service_requests")
+                        .setHeader(KafkaHeaders.PARTITION_ID, 1)
+                        .setHeader(KafkaHeaders.MESSAGE_KEY, "key1")
+                        .setHeader(KafkaHeaders.REPLY_TOPIC, "catalogue_service_responses")
+                        .setHeader(KafkaHeaders.REPLY_PARTITION, replyPartition.array())
+                        .setHeader(KafkaHeaders.CORRELATION_ID, correlationId.array())
+                        .build(),
+                    ParameterizedTypeReference.forType<String>(String::class.java)
+                )
+
+        var response: Message<String>
+        try {
+            response = future
+                .get()
+        } catch (exception: Exception) {
+            throw ResponseStatusException(
+                HttpStatus.REQUEST_TIMEOUT,
+                "The confirmation email couldn't be retrieved due to some malfunction. Please, try later."
+            )
+        }
+
+        if ((response.headers["hasException"] as Boolean)) {
+            throw ResponseStatusException(
+                HttpStatus.valueOf(response.headers["exceptionRawStatus"] as Int),
+                response.headers["exceptionMessage"] as String
+            )
+        }
+
+        return response.payload
+    }
+
+    private fun sendMessage(toMail: String, subject: String, mailBody: String) {
+        val message = SimpleMailMessage()
+        message.setTo(toMail)
+        message.setSubject(subject)
+        message.setText(mailBody)
+
+        try {
+            mailSender.send(message)
+        } catch (exception: MailException) {
+            throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "The mail service cannot be reached due to the following reason: ${exception.message}")
+        }
     }
 
 }

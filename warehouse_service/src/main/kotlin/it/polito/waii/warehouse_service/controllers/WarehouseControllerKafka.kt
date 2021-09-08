@@ -1,8 +1,6 @@
 package it.polito.waii.warehouse_service.controllers
 
-import com.sun.mail.iap.Response
 import it.polito.waii.warehouse_service.dtos.UpdateQuantityDtoKafka
-import it.polito.waii.warehouse_service.exceptions.UnsatisfiableRequestException
 import it.polito.waii.warehouse_service.services.WarehouseService
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.annotation.TopicPartition

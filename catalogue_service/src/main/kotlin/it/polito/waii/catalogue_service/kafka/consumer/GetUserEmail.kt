@@ -18,15 +18,15 @@ import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.util.backoff.BackOffExecution
 
 @Configuration
-class GetAllAdminEmails {
+class GetUserEmail {
 
     @Bean
-    fun getAllAdminEmailsConsumerFactory(): ConsumerFactory<String, Void> {
+    fun getUserEmailConsumerFactory(): ConsumerFactory<String, String> {
         var config = mapOf(
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to VoidDeserializer::class.java,
-            ConsumerConfig.GROUP_ID_CONFIG to "catalogue_service_group_id_2",
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+            ConsumerConfig.GROUP_ID_CONFIG to "catalogue_service_group_id_3",
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest",
         )
 
@@ -34,8 +34,8 @@ class GetAllAdminEmails {
     }
 
     @Bean
-    fun getAllAdminEmailsConcurrentKafkaListenerContainerFactory(@Qualifier("getAllAdminEmailsConsumerFactory") consumerFactory: ConsumerFactory<String, Void>, @Qualifier("getAllAdminEmailsKafkaTemplate") kafkaTemplate: KafkaTemplate<String, Set<String>>, @Qualifier("getAllAdminEmailsExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, Void> {
-        var concurrentKafkaListenerContainerFactory = ConcurrentKafkaListenerContainerFactory<String, Void>()
+    fun getUserEmailConcurrentKafkaListenerContainerFactory(@Qualifier("getUserEmailConsumerFactory") consumerFactory: ConsumerFactory<String, String>, @Qualifier("getUserEmailKafkaTemplate") kafkaTemplate: KafkaTemplate<String, String>, @Qualifier("getUserEmailExceptionKafkaTemplate") exceptionReplyTemplate: KafkaTemplate<String, Any>): ConcurrentKafkaListenerContainerFactory<String, String> {
+        var concurrentKafkaListenerContainerFactory = ConcurrentKafkaListenerContainerFactory<String, String>()
         concurrentKafkaListenerContainerFactory.consumerFactory = consumerFactory
         concurrentKafkaListenerContainerFactory.setReplyTemplate(kafkaTemplate)
 
@@ -52,23 +52,23 @@ class GetAllAdminEmails {
     }
 
     @Bean
-    fun getAllAdminEmailsProducerFactory(): ProducerFactory<String, Set<String>> {
-        var config = mapOf<String, String>(
-
+    fun getUserEmailProducerFactory(): ProducerFactory<String, String> {
+        var config = mapOf(
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java
         )
-        val objectMapper = ObjectMapper()
-        val type = objectMapper.typeFactory.constructParametricType(Set::class.java, String::class.java)
 
-        return DefaultKafkaProducerFactory(config, StringSerializer(), JsonSerializer(type, objectMapper))
+        return DefaultKafkaProducerFactory(config)
     }
 
     @Bean
-    fun getAllAdminEmailsKafkaTemplate(@Qualifier("getAllAdminEmailsProducerFactory") producerFactory: ProducerFactory<String, Set<String>>): KafkaTemplate<String, Set<String>> {
+    fun getUserEmailKafkaTemplate(@Qualifier("getUserEmailProducerFactory") producerFactory: ProducerFactory<String, String>): KafkaTemplate<String, String> {
         return KafkaTemplate(producerFactory)
     }
 
     @Bean
-    fun getAllAdminEmailsExceptionProducerFactory(): ProducerFactory<String, Any> {
+    fun getUserEmailExceptionProducerFactory(): ProducerFactory<String, Any> {
         var config = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
@@ -79,7 +79,7 @@ class GetAllAdminEmails {
     }
 
     @Bean
-    fun getAllAdminEmailsExceptionKafkaTemplate(@Qualifier("getAllAdminEmailsExceptionProducerFactory") producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {
+    fun getUserEmailExceptionKafkaTemplate(@Qualifier("getUserEmailExceptionProducerFactory") producerFactory: ProducerFactory<String, Any>): KafkaTemplate<String, Any> {
         return KafkaTemplate(producerFactory)
     }
 

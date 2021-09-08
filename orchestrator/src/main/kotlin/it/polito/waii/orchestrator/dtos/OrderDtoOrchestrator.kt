@@ -6,7 +6,7 @@ package it.polito.waii.orchestrator.dtos
 
 
 class OrderDtoOrchestrator(
-    val id: Long? = null,
+    val orderId: Long,
     val buyerId: Long,
     val walletId: Long,
     val deliveries: Map<Long, DeliveryDto>,
@@ -16,5 +16,5 @@ class OrderDtoOrchestrator(
     val status: OrderStatus? = null
 ) {
     // no-arg constructor for Jackson
-    constructor() : this(null, 0, 0, mapOf(), mapOf(), 0f, false, null)
+    constructor() : this(0, 0, 0, mapOf(), mapOf(), 0f, false, null)
 }

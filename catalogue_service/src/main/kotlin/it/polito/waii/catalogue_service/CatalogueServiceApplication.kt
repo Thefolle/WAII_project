@@ -82,7 +82,7 @@ class CatalogueServiceApplication{
             val u2 = User(
                 null, "Lucas", password,
                 "Luca", "Bernardi",
-                "lucas@email.com", "via Veneto 19",
+                "lucas@yopmail.com", "via Veneto 19",
                 true, false, true
             )
             userRepository.save(u2)
@@ -90,7 +90,7 @@ class CatalogueServiceApplication{
             val u3 = User(
                 null, "Josef", password,
                 "Josef", "Baldi",
-                "baldi@email.com", "corso Robbia 37",
+                "baldi@yopmail.com", "corso Robbia 37",
                 true, false, true
             )
             userRepository.save(u3)
@@ -98,7 +98,7 @@ class CatalogueServiceApplication{
             val u4 = User(
                 null, "Martina", password,
                 "Martina", "Cobella",
-                "marta@email.com", "via Urbino 28",
+                "marta@yopmail.com", "via Urbino 28",
                 true, false, true
             )
             userRepository.save(u4)
@@ -106,7 +106,7 @@ class CatalogueServiceApplication{
             val u5 = User(
                 null, "Lusy", password,
                 "Lusy", "Cesare",
-                "lusy@email.com", "corso Gambasca 42",
+                "lusy@yopmail.com", "corso Gambasca 42",
                 true, false, true
             )
             userRepository.save(u5)
