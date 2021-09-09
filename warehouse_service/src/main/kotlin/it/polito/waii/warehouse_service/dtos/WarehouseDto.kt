@@ -1,7 +1,5 @@
 package it.polito.waii.warehouse_service.dtos
 
-import javax.validation.constraints.Min
-
 data class WarehouseDto(
     var id: Long?,
     var name: String,

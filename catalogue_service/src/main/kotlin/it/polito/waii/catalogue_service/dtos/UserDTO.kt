@@ -73,7 +73,17 @@ class UserDTO(
     fun toJson(): String {
         val gson = GsonBuilder().setPrettyPrinting().create()
         val json = gson.toJson(this)
-        println(json)
         return json
     }
+
+    fun toReturnUserInfoDto() = ReturnUserInfoDto(
+        uname,
+        mail,
+        name,
+        surname,
+        deliveryAddress,
+        isEn,
+        isAdmin,
+        isCustomer
+    )
 }

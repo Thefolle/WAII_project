@@ -35,7 +35,8 @@ class UserServiceImpl(val userRepository: UserRepository,
 
     private fun getUserByUsername(username: String): User {
         val userOptional = userRepository.findByUsername(username)
-        if (userOptional.isEmpty) throw UsernameNotFoundException("No User with username: $username exists.")
+        if (userOptional.isEmpty) throw ResponseStatusException(HttpStatus.NOT_FOUND,
+            "No user with username $username exists.")
         return userOptional.get()
     }
 
@@ -46,7 +47,12 @@ class UserServiceImpl(val userRepository: UserRepository,
 
     override fun authenticateUser(loginDTO: LoginDTO, response: HttpServletResponse) {
         val user = loadUserByUsername(loginDTO.username)
-        if (!user.isEn) throw ResponseStatusException(HttpStatus.FORBIDDEN, "This user is not enabled yet.")
+
+        if (!user.isEn) throw ResponseStatusException(HttpStatus.FORBIDDEN, "This user is not enabled!")
+        if (!passwordEncoder.matches(loginDTO.password, user.pass)) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid password.")
+        }
+
         val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(user, null, user.authorities)
         val authentication: Authentication = usernamePasswordAuthenticationToken
         val token = jwtUtils.generateJwtToken(authentication)
@@ -86,7 +92,6 @@ class UserServiceImpl(val userRepository: UserRepository,
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun addRole(role: Rolename, username: String) {
-        println(username)
         val user = getUserByUsername(username)
         user.addRole(role)
     }
@@ -121,7 +126,7 @@ class UserServiceImpl(val userRepository: UserRepository,
     }
 
     override fun updatePassword(update: UpdatePasswordDTO) {
-        if (update.new_password != update.new_password_confirm) throw ResponseStatusException(
+        if (update.newPassword != update.newPasswordConfirm) throw ResponseStatusException(
             HttpStatus.CONFLICT,
             "Password and confirmPassword don't match!"
         )
@@ -133,7 +138,7 @@ class UserServiceImpl(val userRepository: UserRepository,
         }
 
         val user = getUserByUsername(username)
-        user.password = passwordEncoder.encode(update.new_password)
+        user.password = passwordEncoder.encode(update.newPassword)
     }
 
     override fun retrieveInformation(): UserDTO {
@@ -148,9 +153,9 @@ class UserServiceImpl(val userRepository: UserRepository,
     }
 
     override fun updateUserInfo(update: UpdateUserDTO): UserDTO {
-        if (userRepository.existsByUsername(update.username)) {
+        if (update.username != null && userRepository.existsByUsername(update.username)) {
             throw ResponseStatusException(HttpStatus.IM_USED, "The username is already in use.")
-        } else if (userRepository.existsByEmail(update.email)) {
+        } else if (update.email != null && userRepository.existsByEmail(update.email)) {
             throw ResponseStatusException(HttpStatus.IM_USED, "The email is already linked to another account.")
         }
 
@@ -162,11 +167,11 @@ class UserServiceImpl(val userRepository: UserRepository,
         }
 
         val user = getUserByUsername(current_username)
-        user.username = update.username
-        user.email = update.email
-        user.name = update.name
-        user.surname = update.surname
-        user.deliveryAddress = update.deliveryAddress
+        user.username = update.username ?: user.username
+        user.email = update.email ?: user.email
+        user.name = update.name ?: user.name
+        user.surname = update.surname ?: user.surname
+        user.deliveryAddress = update.deliveryAddress ?: user.deliveryAddress
 
         return user.toDTO()
     }
