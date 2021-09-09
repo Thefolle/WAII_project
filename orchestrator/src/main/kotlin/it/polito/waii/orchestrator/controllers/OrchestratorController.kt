@@ -58,7 +58,7 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                 .withPayload(0f)
                 .setHeader("hasException", true)
                 .setHeader("exceptionMessage", "The request cannot be processed due to some" +
-                        "malfunction. Please, try later.")
+                        "malfunction in the warehouse service. Please, try later.")
                 .setHeader("exceptionStatus", HttpStatus.REQUEST_TIMEOUT.value())
                 .build()
         }
@@ -100,7 +100,7 @@ class OrchestratorController(val orchestratorService: OrchestratorService) {
                 .withPayload(0f)
                 .setHeader("hasException", true)
                 .setHeader("exceptionMessage", "The request cannot be processed due to some" +
-                        "malfunction. Please, try later.")
+                        "malfunction in the wallet service. Please, try later.")
                 .setHeader("exceptionStatus", HttpStatus.REQUEST_TIMEOUT.value())
                 .build()
         }

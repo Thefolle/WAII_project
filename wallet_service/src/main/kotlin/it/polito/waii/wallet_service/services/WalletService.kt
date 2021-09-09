@@ -19,4 +19,5 @@ interface WalletService {
     fun createWallet(): WalletDTO
 
     fun getWallet(walletId: Long): WalletDTO
+    fun getAllTransactions(walletId: Long): List<TransactionDTO>
 }

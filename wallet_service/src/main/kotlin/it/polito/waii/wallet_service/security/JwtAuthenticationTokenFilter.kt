@@ -22,7 +22,6 @@ class JwtAuthenticationTokenFilter(val jwtUtils: JwtUtils): OncePerRequestFilter
         if ( header != null && header.startsWith("Bearer ")) {
             token = header.substring(7)
             if (jwtUtils.validateJwtToken(token)) {
-                println("Sono nel filter JWT - Wallet")
                 val userDetailsDTO = jwtUtils.getDetailsFromJwtToken(token)
                 val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(userDetailsDTO, null, userDetailsDTO.authorities)
                 usernamePasswordAuthenticationToken.details = WebAuthenticationDetailsSource().buildDetails(request)

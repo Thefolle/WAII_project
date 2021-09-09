@@ -9,4 +9,6 @@ import java.time.LocalDateTime
 @Repository
 interface TransactionRepository: CrudRepository<Transaction, Long> {
     fun findByTimestampBetween(startDate: LocalDateTime, endDate: LocalDateTime): MutableList<Transaction>
+
+    fun findAllByWalletWid(walletId: Long): List<Transaction>
 }

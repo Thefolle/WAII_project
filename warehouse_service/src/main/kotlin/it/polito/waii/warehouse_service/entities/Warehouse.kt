@@ -5,6 +5,7 @@ import javax.persistence.Entity
 import javax.persistence.GeneratedValue
 import javax.persistence.Id
 import javax.persistence.OneToMany
+import javax.validation.constraints.Min
 
 @Entity
 class Warehouse(
@@ -15,7 +16,6 @@ class Warehouse(
     var city: String,
     var region: String,
     var capacity: Long,
-    // current availability is computed on the fly
 
     @OneToMany(mappedBy = "product")
     var products: MutableSet<ProductWarehouse>?
@@ -25,7 +25,6 @@ class Warehouse(
         name,
         city,
         region,
-        capacity,
-        null
+        capacity
     )
 }

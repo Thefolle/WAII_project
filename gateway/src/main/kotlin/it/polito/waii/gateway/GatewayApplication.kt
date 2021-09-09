@@ -30,7 +30,7 @@ class GatewayApplication{
                 factory -> factory.configureDefault {
                 id -> Resilience4JConfigBuilder(id)
             .circuitBreakerConfig(CircuitBreakerConfig.ofDefaults())
-            .timeLimiterConfig(TimeLimiterConfig.custom().timeoutDuration(Duration.ofSeconds(15)).build()) //requests that takes more than 15 seconds will open the circuit
+            .timeLimiterConfig(TimeLimiterConfig.custom().timeoutDuration(Duration.ofSeconds(22)).build()) //requests that takes more than 15 seconds will open the circuit
             .build()
             }
         }

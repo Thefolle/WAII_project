@@ -104,7 +104,7 @@ class OrderServiceImpl : OrderService {
             totalPrice = response.payload
         } catch (exception: Exception) {
             throw ResponseStatusException(HttpStatus.REQUEST_TIMEOUT, "The request cannot be processed due to some " +
-                    "malfunction. Please, try later.")
+                    "malfunction in the orchestrator service. Please, try later.")
         }
 
         if ((response.headers["hasException"] as Boolean)) {
@@ -417,7 +417,7 @@ class OrderServiceImpl : OrderService {
         } catch (exception: Exception) {
             throw ResponseStatusException(
                 HttpStatus.REQUEST_TIMEOUT,
-                "The order couldn't be updated due to some malfunction. Please, try later."
+                "The order couldn't be updated due to some malfunction in the orchestrator service. Please, try later."
             )
         }
 

@@ -53,8 +53,8 @@ class GetAllAdminEmails {
 
     @Bean
     fun getAllAdminEmailsProducerFactory(): ProducerFactory<String, Set<String>> {
-        var config = mapOf<String, String>(
-
+        var config = mapOf(
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092"
         )
         val objectMapper = ObjectMapper()
         val type = objectMapper.typeFactory.constructParametricType(Set::class.java, String::class.java)

@@ -84,7 +84,7 @@ class CreateOrderLoopback {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
         // don't use the replyTimeout parameter of sendAndReceive: it is neglected, probably for a bug
-        replyingKafkaTemplate.setDefaultReplyTimeout(Duration.ofSeconds(15))
+        replyingKafkaTemplate.setDefaultReplyTimeout(Duration.ofSeconds(20))
         return replyingKafkaTemplate
     }
 

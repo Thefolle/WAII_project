@@ -119,6 +119,7 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
     override fun getTransaction(walletId: Long, transactionId: Long): TransactionDTO {
         val transactionOptional = transactionRepository.findById(transactionId)
         if (transactionOptional.isEmpty) throw ResponseStatusException(HttpStatus.NOT_FOUND, "No transaction with id $transactionId exists.")
+
         val isAdmin = getUserRole()
         val walletOptional = walletRepository.findById(walletId)
         val username = getUsername()
@@ -154,6 +155,12 @@ class WalletServiceImpl(val walletRepository: WalletRepository, val transactionR
         val isAdmin = getUserRole()
         if (!isAdmin && walletOptional.get().ownerUsername != username) throw ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this wallet!")
         return walletOptional.get().toDTO()
+    }
+
+    override fun getAllTransactions(walletId: Long): List<TransactionDTO> {
+        if (!walletRepository.existsById(walletId)) throw ResponseStatusException(HttpStatus.NOT_FOUND, "No wallet with id $walletId exists.")
+
+        return transactionRepository.findAllByWalletWid(walletId).map { it.toDto() }
     }
 
 }

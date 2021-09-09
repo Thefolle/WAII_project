@@ -49,6 +49,18 @@ class WarehouseServiceImpl : WarehouseService {
 
 
     private fun getProductWarehouseById(productId: Long, warehouseId: Long): ProductWarehouse{
+        if (!warehouseRepository.existsById(warehouseId)) {
+            throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "No warehouse with id $warehouseId exists."
+            )
+        } else if (!productRepository.existsById(productId)) {
+            throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "No product with id $productId exists."
+            )
+        }
+
         val compKey = CompositeKey(productId, warehouseId)
         val productWarehouseOptional = productWarehouseRepository.findById(compKey)
         if (productWarehouseOptional.isEmpty) throw ResponseStatusException(
@@ -86,7 +98,7 @@ class WarehouseServiceImpl : WarehouseService {
 
     override fun getWarehouseById(id: Long): WarehouseDto {
         if (!warehouseRepository.existsById(id)) {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "No warehouse with id ${id} exists.")
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "No warehouse with id $id exists.")
         }
 
         return warehouseRepository
@@ -151,6 +163,11 @@ class WarehouseServiceImpl : WarehouseService {
     override fun deleteWarehouse(id: Long) {
         if (!warehouseRepository.existsById(id)) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "No warehouse with id $id exists.")
+        } else if (productWarehouseRepository.existsByWarehouseId(id)) {
+            throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "The warehouse cannot be deleted because it still stores some products."
+            )
         }
 
         warehouseRepository
@@ -158,33 +175,41 @@ class WarehouseServiceImpl : WarehouseService {
     }
 
     override fun getProductQuantity(warehouseId: Long, productId: Long): Long {
-        if (productRepository.findById(productId).isEmpty) throw ResponseStatusException(
+        if (!productRepository.existsById(productId)) throw ResponseStatusException(
             HttpStatus.NOT_FOUND,
             "No product with id $productId exists."
-        )
-        if (warehouseRepository.findById(warehouseId).isEmpty) throw ResponseStatusException(
+        ) else if (!warehouseRepository.existsById(warehouseId)) throw ResponseStatusException(
             HttpStatus.NOT_FOUND,
             "No warehouse with id $warehouseId exists."
-        )
+        ) else if (!productWarehouseRepository.existsById(CompositeKey(productId, warehouseId))) {
+            throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "This warehouse doesn't store such a product."
+            )
+        }
 
         return getProductWarehouseById(productId, warehouseId).quantity
     }
 
     override fun getAllQuantities(warehouseId: Long): List<ProductQuantityDTO> {
-        if (warehouseRepository.findById(warehouseId).isEmpty) throw ResponseStatusException(
-            HttpStatus.NOT_FOUND,
-            "No warehouse with id $warehouseId exists."
-        )
-        return productWarehouseRepository.findAll().map { ProductQuantityDTO(it.product.name, it.quantity) }
+        if (!warehouseRepository.existsById(warehouseId)) {
+            throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "No warehouse with id $warehouseId exists."
+            )
+        }
+
+        return productWarehouseRepository
+            .getAllByWarehouseId(warehouseId)
+            .map { ProductQuantityDTO(it.product.name, it.quantity) }
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     override fun updateProductQuantity(warehouseId: Long, updateQuantityDTO: UpdateQuantityDTO): Float {
 
-        if (warehouseRepository.findById(warehouseId).isEmpty) throw ResponseStatusException(
-            HttpStatus.NOT_FOUND,
-            "No warehouse with id $warehouseId exists."
-        )
+        if (!warehouseRepository.existsById(warehouseId)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "No warehouse with id $warehouseId exists.")
+        }
 
         val productOptional = productRepository.findById(updateQuantityDTO.productId)
         if (productOptional.isEmpty) throw ResponseStatusException(
@@ -248,12 +273,15 @@ class WarehouseServiceImpl : WarehouseService {
     override fun updateProductAlarmLevel(warehouseId: Long, productId: Long, newAlarmLevel: Long): ProductWarehouseDTO {
         val productWarehouse = getProductWarehouseById(productId, warehouseId)
         productWarehouse.alarmLevel = newAlarmLevel
-        if (productWarehouse.quantity < productWarehouse.alarmLevel){
-            sendAlarmLevelReachedByEmail(
-                productWarehouse.alarmLevel,
-                productWarehouse.product.name,
-                productWarehouse.product.id!!
-            )
+
+        if (productWarehouse.quantity < productWarehouse.alarmLevel) {
+            thread(start = true) {
+                sendAlarmLevelReachedByEmail(
+                    productWarehouse.alarmLevel,
+                    productWarehouse.product.name,
+                    productWarehouse.product.id!!
+                )
+            }
         }
 
         return productWarehouse.toDTO()

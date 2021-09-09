@@ -14,8 +14,12 @@ interface ProductWarehouseRepository : CrudRepository<ProductWarehouse, Composit
 
     fun getAllByProduct(product: Product): List<ProductWarehouse>
 
+    fun getAllByWarehouseId(warehouseId: Long): List<ProductWarehouse>
+
     fun findByCompositeKey(compositeKey: CompositeKey): Optional<ProductWarehouse>
 
     fun existsByProductId(productId: Long): Boolean
+
+    fun existsByWarehouseId(id: Long): Boolean
 
 }

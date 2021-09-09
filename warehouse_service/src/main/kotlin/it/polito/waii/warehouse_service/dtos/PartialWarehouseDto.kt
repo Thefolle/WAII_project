@@ -5,6 +5,5 @@ data class PartialWarehouseDto(
     var city: String?,
     var region: String?,
     // expressed in m^3
-    var capacity: Long?,
-    var availability: Long?
+    var capacity: Long?
 )

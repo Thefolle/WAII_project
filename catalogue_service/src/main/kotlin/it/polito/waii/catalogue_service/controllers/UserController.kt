@@ -8,6 +8,7 @@ import it.polito.waii.catalogue_service.entities.Action
 import it.polito.waii.catalogue_service.services.UserServiceImpl
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import javax.validation.Valid
@@ -25,7 +26,7 @@ class UserController(private val userServiceImpl: UserServiceImpl) {
     }
 
     @PatchMapping("/updateInfo")
-    fun updateRole(@Valid @RequestBody updateUserDTO: UpdateUserDTO): ResponseEntity<String> {
+    fun updateRole(@Validated @RequestBody updateUserDTO: UpdateUserDTO): ResponseEntity<String> {
         val user = userServiceImpl.updateUserInfo(updateUserDTO)
 
         return ResponseEntity.status(HttpStatus.OK)
