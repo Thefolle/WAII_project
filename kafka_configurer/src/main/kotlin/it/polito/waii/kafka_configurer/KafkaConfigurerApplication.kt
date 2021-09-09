@@ -15,7 +15,7 @@ class KafkaConfigurerApplication {
 
     @Bean
     fun orderServiceResponsesTopic(): NewTopic {
-        return NewTopic("order_service_responses", 1, 1)
+        return NewTopic("order_service_responses", 6, 1)
     }
 
     @Bean

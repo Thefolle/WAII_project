@@ -88,7 +88,7 @@ class TestController {
             response = future.get()
         } catch (exception: Exception) {
             throw ResponseStatusException(HttpStatus.REQUEST_TIMEOUT, "The request cannot be processed due to some " +
-                    "malfunction. Please, try later.")
+                    "malfunction in the order service. Please, try later.")
         }
 
         propagateExceptionIfPresent(response.headers)
@@ -100,7 +100,7 @@ class TestController {
     @GetMapping
     fun getOrders(): Set<OrderDto> {
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
-        replyPartition.putInt(0)
+        replyPartition.putInt(1)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
         correlationId.putInt(1)
         val objectMapper = ObjectMapper()
@@ -128,7 +128,7 @@ class TestController {
             response = future.get()
         } catch (exception: Exception) {
             throw ResponseStatusException(HttpStatus.REQUEST_TIMEOUT, "The request cannot be processed due to some " +
-                    "malfunction. Please, try later.")
+                    "malfunction in the order service. Please, try later.")
         }
 
         return response.payload
@@ -137,7 +137,7 @@ class TestController {
     @GetMapping("/{id}")
     fun getOrderById(@PathVariable("id") id: Long) : OrderDto {
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
-        replyPartition.putInt(0)
+        replyPartition.putInt(2)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
         correlationId.putInt(2)
 
@@ -183,7 +183,7 @@ class TestController {
         }
 
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
-        replyPartition.putInt(0)
+        replyPartition.putInt(3)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
         correlationId.putInt(3)
 
@@ -212,7 +212,7 @@ class TestController {
                 .get()
         } catch (exception: Exception) {
             throw ResponseStatusException(HttpStatus.REQUEST_TIMEOUT, "The request cannot be processed due to some " +
-                    "malfunction. Please, try later.")
+                    "malfunction in the order service. Please, try later.")
         }
 
         propagateExceptionIfPresent(response.headers)
@@ -227,7 +227,7 @@ class TestController {
         val roles = userDetails.authorities.joinToString(",") { it.authority }
 
         val replyPartition = ByteBuffer.allocate(Int.SIZE_BYTES)
-        replyPartition.putInt(0)
+        replyPartition.putInt(4)
         val correlationId = ByteBuffer.allocate(Int.SIZE_BYTES)
         correlationId.putInt(4)
 
@@ -255,7 +255,7 @@ class TestController {
                 .get()
         } catch (exception: Exception) {
             throw ResponseStatusException(HttpStatus.REQUEST_TIMEOUT, "The request cannot be processed due to some " +
-                    "malfunction. Please, try later.")
+                    "malfunction in the order service. Please, try later.")
         }
 
         propagateExceptionIfPresent(response.headers)

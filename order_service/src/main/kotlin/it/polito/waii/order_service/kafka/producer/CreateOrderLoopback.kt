@@ -17,6 +17,7 @@ import org.springframework.kafka.core.*
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.ConsumerAwareBatchErrorHandler
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
+import org.springframework.kafka.support.TopicPartitionOffset
 import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.retry.support.RetryTemplateBuilder
 import java.time.Duration
@@ -42,7 +43,7 @@ class CreateOrderLoopback {
 
     @Bean
     fun createOrderLoopbackConcurrentMessageListenerContainer(@Qualifier("createOrderLoopbackConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, Long>): ConcurrentMessageListenerContainer<String, Long> {
-        var container = containerFactory.createContainer("order_service_responses")
+        var container = containerFactory.createContainer(TopicPartitionOffset("order_service_responses", 0))
         container.containerProperties.setGroupId("outer_service_group_id")
 
         // this error handler is called when a listener receives a message from the shared reply topic that

@@ -488,7 +488,7 @@ class OrderServiceImpl : OrderService {
         } catch (exception: Exception) {
             throw ResponseStatusException(
                 HttpStatus.REQUEST_TIMEOUT,
-                "The confirmation email couldn't be retrieved due to some malfunction. Please, try later."
+                "The confirmation email couldn't be sent due to some malfunction. Please, try later."
             )
         }
 

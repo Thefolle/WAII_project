@@ -24,8 +24,6 @@ import java.time.Instant
 @Configuration
 class CreateOrder {
 
-    val REQUEST_TIMEOUT_MS_CONFIG = 15000
-
     @Bean
     fun createOrderConsumerFactory(): ConsumerFactory<String, String> {
         var config = mapOf(
@@ -33,8 +31,7 @@ class CreateOrder {
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.GROUP_ID_CONFIG to "orchestrator_group_id_2",
-            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest",
-            ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG to REQUEST_TIMEOUT_MS_CONFIG
+            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "latest"
         )
 
         return DefaultKafkaConsumerFactory(config)

@@ -18,6 +18,7 @@ import org.springframework.kafka.core.ProducerFactory
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.kafka.listener.ConsumerAwareBatchErrorHandler
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate
+import org.springframework.kafka.support.TopicPartitionOffset
 import org.springframework.kafka.support.serializer.JsonSerializer
 import java.time.Duration
 
@@ -40,18 +41,18 @@ class UpdateOrderLoopback {
         val replyingKafkaTemplate = ReplyingKafkaTemplate(producerFactory, container)
         replyingKafkaTemplate.setSharedReplyTopic(true)
         // don't use the replyTimeout parameter of sendAndReceive: it is neglected, probably for a bug
-        replyingKafkaTemplate.setDefaultReplyTimeout(Duration.ofSeconds(15))
+        replyingKafkaTemplate.setDefaultReplyTimeout(Duration.ofSeconds(20))
         return replyingKafkaTemplate
     }
 
     @Bean
     fun updateOrderLoopbackConcurrentMessageListenerContainer(@Qualifier("updateOrderLoopbackConcurrentKafkaListenerContainerFactory") containerFactory: ConcurrentKafkaListenerContainerFactory<String, Void>): ConcurrentMessageListenerContainer<String, Void> {
-        var container = containerFactory.createContainer("order_service_responses")
+        var container = containerFactory.createContainer(TopicPartitionOffset("order_service_responses", 3))
         container.containerProperties.setGroupId("order_service_group_id_20")
 
         val consumerAwareBatchErrorHandler = ConsumerAwareBatchErrorHandler { thrownException, data, consumer ->
             if (thrownException is SerializationException) {
-                consumer.seek(TopicPartition("order_service_responses", 0), consumer.position(TopicPartition("order_service_responses", 0)) + 1)
+                consumer.seek(TopicPartition("order_service_responses", 3), consumer.position(TopicPartition("order_service_responses", 3)) + 1)
             }
         }
         container.setBatchErrorHandler(consumerAwareBatchErrorHandler)
